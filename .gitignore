@@ -256,3 +256,4 @@ FakesAssemblies/
 # Custom
 /qtcreator.bin/*
 /qtcreator.bin/*.*
+*.db

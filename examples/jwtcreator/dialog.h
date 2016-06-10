@@ -7,6 +7,8 @@ namespace Ui {
 class Dialog;
 }
 
+#include "../../src/qjsonwebtoken.h"
+
 class Dialog : public QDialog
 {
     Q_OBJECT
@@ -14,6 +16,8 @@ class Dialog : public QDialog
 public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();
+
+	QJsonWebToken m_jwtObj;
 
 private slots:
     void on_pushAddClaim_clicked();
