@@ -43,8 +43,12 @@ public:
 
 	static QJsonWebToken fromTokenAndSecret(QString strToken, QString srtSecret);
 
-	// helpers
+	static QStringList supportedAlgorithms();
+
+	// convenience functions
+
 	void appendClaim(QString strClaimType, QString strValue);
+
 	void removeClaim(QString strClaimType);
 
 private:

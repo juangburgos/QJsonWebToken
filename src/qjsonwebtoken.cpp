@@ -1,10 +1,12 @@
 #include "qjsonwebtoken.h"
 
+#include <QDebug>
+
 QJsonWebToken::QJsonWebToken()
 {
 	// create the header with default algorithm
 	setAlgorithmStr("HS256");
-	m_jdocPayload.fromJson("{}");
+	m_jdocPayload = QJsonDocument::fromJson("{}");
 }
 
 QJsonWebToken::QJsonWebToken(const QJsonWebToken &other)
@@ -103,7 +105,7 @@ QByteArray QJsonWebToken::getSignature()
 	// get payload in compact mode and base64 encoded
 	QByteArray bytePayloadBase64 = getPayloadQStr(QJsonDocument::JsonFormat::Compact).toUtf8().toBase64();
 	// calculate signature based on chosen algorithm and secret
-	QByteArray m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
+	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
 	if (m_strAlgorithm.compare("HS256", Qt::CaseInsensitive) == 0)      // HMAC using SHA-256 hash algorithm
 	{
 		m_byteSignature = QMessageAuthenticationCode::hash(m_byteAllData, m_strSecret.toUtf8(), QCryptographicHash::Sha256);
@@ -166,7 +168,6 @@ bool QJsonWebToken::setAlgorithmStr(QString strAlgorithm)
 	m_jdocHeader = QJsonDocument::fromJson(QObject::trUtf8("{\"typ\": \"JWT\", \"alg\" : \"").toUtf8()
 		                                 + m_strAlgorithm.toUtf8()
 		                                 + QObject::trUtf8("\"}").toUtf8());
-
 	return true;
 }
 
@@ -247,12 +248,18 @@ QJsonWebToken QJsonWebToken::fromTokenAndSecret(QString strToken, QString srtSec
 
 void QJsonWebToken::appendClaim(QString strClaimType, QString strValue)
 {
-	m_jdocPayload.object().insert(strClaimType, strValue);
+	// have to make a copy of the json object, modify the copy and then put it back, sigh
+	QJsonObject jObj = m_jdocPayload.object();
+	jObj.insert(strClaimType, strValue);
+	m_jdocPayload = QJsonDocument(jObj);
 }
 
 void QJsonWebToken::removeClaim(QString strClaimType)
 {
-	m_jdocPayload.object().remove(strClaimType);
+	// have to make a copy of the json object, modify the copy and then put it back, sigh
+	QJsonObject jObj = m_jdocPayload.object();
+	jObj.remove(strClaimType);
+	m_jdocPayload = QJsonDocument(jObj);
 }
 
 bool QJsonWebToken::isAlgorithmSupported(QString strAlgorithm)
@@ -271,4 +278,10 @@ bool QJsonWebToken::isAlgorithmSupported(QString strAlgorithm)
 		return false;
 	}
 	return true;
+}
+
+QStringList QJsonWebToken::supportedAlgorithms()
+{
+	// TODO : support other algorithms
+	return QStringList() << "HS256" << "HS384" << "HS512";
 }
