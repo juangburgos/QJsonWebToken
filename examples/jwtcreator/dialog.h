@@ -24,9 +24,9 @@ private slots:
 
     void on_pushRemoveClaim_clicked();
 
-    void on_lineSecret_returnPressed();
-
     void on_comboAlgorithm_currentIndexChanged(const QString &arg1);
+
+    void on_lineSecret_textChanged(const QString &arg1);
 
 private:
     Ui::Dialog *ui;

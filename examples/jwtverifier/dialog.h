@@ -7,6 +7,8 @@ namespace Ui {
 class Dialog;
 }
 
+#include "../../src/qjsonwebtoken.h"
+
 class Dialog : public QDialog
 {
     Q_OBJECT

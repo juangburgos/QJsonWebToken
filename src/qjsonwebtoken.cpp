@@ -42,7 +42,10 @@ bool QJsonWebToken::setHeaderJDoc(QJsonDocument jdocHeader)
 		return false;
 	}
 
-	m_jdocPayload = jdocHeader;
+	m_jdocHeader = jdocHeader;
+
+	// set also new algorithm
+	m_strAlgorithm = strAlgorithm;
 
 	return true;
 }
@@ -53,7 +56,7 @@ bool QJsonWebToken::setHeaderQStr(QString strHeader)
 	QJsonDocument tmpHeader = QJsonDocument::fromJson(strHeader.toUtf8(), &error);
 
 	// validate and set header
-	if (error.error != QJsonParseError::NoError || !setPayloadJDoc(tmpHeader))
+	if (error.error != QJsonParseError::NoError || !setHeaderJDoc(tmpHeader))
 	{
 		return false;
 	}
@@ -168,6 +171,7 @@ bool QJsonWebToken::setAlgorithmStr(QString strAlgorithm)
 	m_jdocHeader = QJsonDocument::fromJson(QObject::trUtf8("{\"typ\": \"JWT\", \"alg\" : \"").toUtf8()
 		                                 + m_strAlgorithm.toUtf8()
 		                                 + QObject::trUtf8("\"}").toUtf8());
+
 	return true;
 }
 
@@ -193,11 +197,11 @@ bool QJsonWebToken::setToken(QString strToken)
 	// so we dont overwrite this instance in case of error
 	QJsonWebToken tempTokenObj;
 	if ( !tempTokenObj.setHeaderQStr(QByteArray::fromBase64(listJwtParts.at(0).toUtf8())) ||
-		 !tempTokenObj.setHeaderQStr(QByteArray::fromBase64(listJwtParts.at(1).toUtf8())) )
+		 !tempTokenObj.setPayloadQStr(QByteArray::fromBase64(listJwtParts.at(1).toUtf8())) )
 	{
 		// try unencoded
 		if (!tempTokenObj.setHeaderQStr(listJwtParts.at(0)) ||
-			!tempTokenObj.setHeaderQStr(listJwtParts.at(1)))
+			!tempTokenObj.setPayloadQStr(listJwtParts.at(1)))
 		{
 			return false;
 		}

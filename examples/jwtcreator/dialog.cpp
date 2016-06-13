@@ -71,18 +71,18 @@ void Dialog::on_pushRemoveClaim_clicked()
 	ui->lineValue->clear();
 }
 
-void Dialog::on_lineSecret_returnPressed()
-{
-	// set new secret
-	m_jwtObj.setSecret(ui->lineSecret->text());
-	// show new jwt
-	ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
-}
-
 void Dialog::on_comboAlgorithm_currentIndexChanged(const QString &arg1)
 {
 	// set new secret
 	m_jwtObj.setAlgorithmStr(arg1);
 	// show new jwt
 	ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
+}
+
+void Dialog::on_lineSecret_textChanged(const QString &arg1)
+{
+    // set new secret
+    m_jwtObj.setSecret(ui->lineSecret->text());
+    // show new jwt
+    ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
 }
