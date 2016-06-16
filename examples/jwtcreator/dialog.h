@@ -28,6 +28,8 @@ private slots:
 
     void on_lineSecret_textChanged(const QString &arg1);
 
+    void on_pushRandom_clicked();
+
 private:
     Ui::Dialog *ui;
 };

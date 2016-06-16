@@ -86,3 +86,15 @@ void Dialog::on_lineSecret_textChanged(const QString &arg1)
     // show new jwt
     ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
 }
+
+void Dialog::on_pushRandom_clicked()
+{
+    // set random secret
+    m_jwtObj.setRandomSecret();
+    // set random secret in lineedit
+    ui->lineSecret->blockSignals(true);
+    ui->lineSecret->setText(m_jwtObj.getSecret());
+    ui->lineSecret->blockSignals(false);
+    // show new jwt
+    ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
+}

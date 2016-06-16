@@ -7,6 +7,9 @@ QJsonWebToken::QJsonWebToken()
 	// create the header with default algorithm
 	setAlgorithmStr("HS256");
 	m_jdocPayload = QJsonDocument::fromJson("{}");
+    // default for random generation
+    m_intRandLength   = 10;
+    m_strRandAlphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 }
 
 QJsonWebToken::QJsonWebToken(const QJsonWebToken &other)
@@ -150,7 +153,16 @@ bool QJsonWebToken::setSecret(QString strSecret)
 
 	m_strSecret = strSecret;
 
-	return true;
+    return true;
+}
+
+void QJsonWebToken::setRandomSecret()
+{
+    m_strSecret.resize(m_intRandLength);
+    for (int i = 0; i < m_intRandLength; ++i)
+    {
+        m_strSecret[i] = m_strRandAlphanum.at(rand() % (m_strRandAlphanum.length() - 1));
+    }
 }
 
 QString QJsonWebToken::getAlgorithmStr()
@@ -224,7 +236,35 @@ bool QJsonWebToken::setToken(QString strToken)
 	// allData not valid anymore
 	m_byteAllData.clear();
 	// success
-	return true;
+    return true;
+}
+
+QString QJsonWebToken::getRandAlphanum()
+{
+    return m_strRandAlphanum;
+}
+
+void QJsonWebToken::setRandAlphanum(QString strRandAlphanum)
+{
+    if(strRandAlphanum.isNull())
+    {
+        return;
+    }
+    m_strRandAlphanum = strRandAlphanum;
+}
+
+int QJsonWebToken::getRandLength()
+{
+    return m_intRandLength;
+}
+
+void QJsonWebToken::setRandLength(int intRandLength)
+{
+    if(intRandLength < 0 || intRandLength > 1e6)
+    {
+        return;
+    }
+    m_intRandLength = intRandLength;
 }
 
 bool QJsonWebToken::isValid()

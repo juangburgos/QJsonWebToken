@@ -31,13 +31,19 @@ public:
 
 	QString       getSecret();
 	bool          setSecret(QString strSecret);
-	//QString       setRandomSecret(); // TODO : implement
+    void          setRandomSecret();
 
 	QString       getAlgorithmStr();
 	bool          setAlgorithmStr(QString strAlgorithm);
 
 	QString       getToken();
 	bool          setToken(QString strToken);
+
+    QString       getRandAlphanum();
+    void          setRandAlphanum(QString strRandAlphanum);
+
+    int           getRandLength();
+    void          setRandLength(int intRandLength);
 
 	bool          isValid();
 
@@ -58,6 +64,9 @@ private:
 	QByteArray    m_byteSignature; // unencoded
 	QString       m_strSecret;
 	QString       m_strAlgorithm;
+
+    int           m_intRandLength  ;
+    QString       m_strRandAlphanum;
 
 	// helpers
 	QByteArray    m_byteAllData;
