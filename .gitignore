@@ -258,3 +258,4 @@ FakesAssemblies/
 /qtcreator.bin/*.*
 *.db
 /examples/jwtcreator/*.opendb
+/doc/*
