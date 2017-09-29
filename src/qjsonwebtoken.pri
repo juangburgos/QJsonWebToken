@@ -1,7 +1,7 @@
 CONFIG   -= flat
 
-SOURCES  +=  \
-            ../../src/qjsonwebtoken.cpp 
+INCLUDEPATH += $$PWD/
 
-HEADERS  += \
-            ../../src/qjsonwebtoken.h  
+SOURCES  += $$PWD/qjsonwebtoken.cpp 
+
+HEADERS  += $$PWD/qjsonwebtoken.h  
