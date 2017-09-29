@@ -5,7 +5,7 @@ QJsonWebToken : JWT (JSON Web Token) Implementation in Qt C++
 This class implements a subset of the [JSON Web Token](https://en.wikipedia.org/wiki/JSON_Web_Token) 
 open standard [RFC 7519](https://tools.ietf.org/html/rfc7519).
 
-Currently this implementation only supports the following algorithms:
+Currently this implementation **only supports** the following algorithms:
 
 Alg   | Parameter Value	Algorithm
 ----- | ------------------------------------
@@ -29,6 +29,10 @@ The repository of this project includes examples that demonstrate the use of thi
 * ```./examples/jwtcreator/```  : Example that shows how to create a JWT with your custom *payload*.
 
 * ```./examples/jwtverifier/``` : Example that shows how to validate a JWT with a given *secret*.
+
+### Limitations
+
+Currently, `QJsonWebToken` validator, can **only** validate tokens created by `QJsonWebToken` itself. This limitation is due to the usage of Qt's [QJsonDocument API](http://doc.qt.io/qt-5/qjsondocument.html), see [this issue for further explanation](https://github.com/juangburgos/QJsonWebToken/issues/3#issuecomment-333056575).
 
 ### License
 
