@@ -201,6 +201,14 @@ QString QJsonWebToken::getToken()
 	return m_byteAllData + "." + byteSignatureBase64;
 }
 
+static QByteArray readBase64(QString strToken) {
+	// decode based on RFC-4648 URI safe encoding
+	strToken.replace('-', '+');
+	strToken.replace('_', '/');
+
+	return QByteArray::fromBase64(strToken.toUtf8());
+}
+
 bool QJsonWebToken::setToken(QString strToken)
 {
 	// assume base64 encoded at first, if not try decoding
@@ -214,8 +222,8 @@ bool QJsonWebToken::setToken(QString strToken)
 	// check all parts are valid using another instance,
 	// so we dont overwrite this instance in case of error
 	QJsonWebToken tempTokenObj;
-	if ( !tempTokenObj.setHeaderQStr(QByteArray::fromBase64(listJwtParts.at(0).toUtf8())) ||
-		 !tempTokenObj.setPayloadQStr(QByteArray::fromBase64(listJwtParts.at(1).toUtf8())) )
+	if ( !tempTokenObj.setHeaderQStr(readBase64(listJwtParts.at(0))) ||
+		 !tempTokenObj.setPayloadQStr(readBase64(listJwtParts.at(1))) )
 	{
 		// try unencoded
 		if (!tempTokenObj.setHeaderQStr(listJwtParts.at(0)) ||
@@ -233,8 +241,8 @@ bool QJsonWebToken::setToken(QString strToken)
 	setPayloadQStr(tempTokenObj.getPayloadQStr());
 	if (isBase64Encoded)
 	{ // unencode
-		m_byteSignature = QByteArray::fromBase64(listJwtParts.at(2).toUtf8());
-	} 
+		m_byteSignature = readBase64(listJwtParts.at(2));
+	}
 	else
 	{
 		m_byteSignature = listJwtParts.at(2).toUtf8();
