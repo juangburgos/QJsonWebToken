@@ -223,7 +223,7 @@ bool QJsonWebToken::setToken(QString strToken)
 	// so we dont overwrite this instance in case of error
 	QJsonWebToken tempTokenObj;
 	if ( !tempTokenObj.setHeaderQStr(readBase64(listJwtParts.at(0))) ||
-		!tempTokenObj.setPayloadQStr(readBase64(listJwtParts.at(1))) )
+		 !tempTokenObj.setPayloadQStr(readBase64(listJwtParts.at(1))) )
 	{
 		// try unencoded
 		if (!tempTokenObj.setHeaderQStr(listJwtParts.at(0)) ||
