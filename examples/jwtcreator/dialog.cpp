@@ -11,20 +11,20 @@
 #include <QDateTime>
 
 Dialog::Dialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::Dialog)
+	QDialog(parent),
+	ui(new Ui::Dialog)
 {
-    ui->setupUi(this);
+	ui->setupUi(this);
 	// set some tooltips
 	ui->pushRemoveClaim->setToolTip("To remove a claim you just need to define the <b>Claim Type<\b>");
 	ui->pushRemoveClaim->setToolTipDuration(3500);
 	// set default secret
 	ui->lineSecret->setText("mydirtysecret");
-	m_jwtObj.setSecret("mydirtysecret");
+	m_jwtObj.setKey(QJsonWebKey::fromOctet("mydirtysecret"));
 	// set a default payload
 	m_jwtObj.appendClaim("iss", "juangburgos");
-    m_jwtObj.appendClaim("iat", static_cast<qint64>(QDateTime::currentDateTime().toTime_t()));
-    m_jwtObj.appendClaim("exp", static_cast<qint64>(QDateTime::currentDateTime().addDays(7).toTime_t()));
+	m_jwtObj.appendClaim("iat", static_cast<qint64>(QDateTime::currentDateTime().toTime_t()));
+	m_jwtObj.appendClaim("exp", static_cast<qint64>(QDateTime::currentDateTime().addDays(7).toTime_t()));
 	m_jwtObj.appendClaim("aud", "everybody");
 	m_jwtObj.appendClaim("sub", "hey there");
 	// set current value to views
@@ -35,7 +35,7 @@ Dialog::Dialog(QWidget *parent) :
 
 Dialog::~Dialog()
 {
-    delete ui;
+	delete ui;
 }
 
 void Dialog::on_pushAddClaim_clicked()
@@ -87,20 +87,28 @@ void Dialog::on_comboAlgorithm_currentIndexChanged(const QString &arg1)
 
 void Dialog::on_lineSecret_textChanged(const QString &)
 {
-    // set new secret
-    m_jwtObj.setSecret(ui->lineSecret->text().toUtf8());
-    // show new jwt
-    ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
+	// set new secret
+	m_jwtObj.setKey(QJsonWebKey::fromOctet(ui->lineSecret->text().toUtf8()));
+	// show new jwt
+	ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
 }
 
 void Dialog::on_pushRandom_clicked()
 {
-    // set random secret
-    m_jwtObj.setRandomSecret();
-    // set random secret in lineedit
-    ui->lineSecret->blockSignals(true);
-    ui->lineSecret->setText(m_jwtObj.getSecret());
-    ui->lineSecret->blockSignals(false);
-    // show new jwt
-    ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
+	// set random secret
+	int randLength = 10;
+	QByteArray randAlphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	QByteArray secret;
+	secret.resize(randLength);
+	for (int i = 0; i < randLength; ++i)
+	{
+		secret[i] = randAlphanum.at(rand() % (randAlphanum.length() - 1));
+	}
+	m_jwtObj.setKey(QJsonWebKey::fromOctet(secret));
+	// set random secret in lineedit
+	ui->lineSecret->blockSignals(true);
+	ui->lineSecret->setText(QString::fromUtf8(secret));
+	ui->lineSecret->blockSignals(false);
+	// show new jwt
+	ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
 }

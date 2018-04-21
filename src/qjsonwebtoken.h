@@ -17,8 +17,14 @@
 
 #include <QObject>
 #include <QMessageAuthenticationCode>
+#include <QSharedPointer>
 #include <QJsonDocument>
 #include <QJsonObject>
+
+
+// forward declaration
+class QJsonWebKey;
+
 
 /**
 
@@ -184,35 +190,22 @@ public:
 
 	/**
 
-	\brief Returns the JWT *secret* as a QByteArray.
-	\return JWT *secret* as a QByteArray.
+	\brief Returns the JWK.
+	\return JsonWebKey.
 
 	*/
-	QByteArray    getSecret() const;
+	QSharedPointer<QJsonWebKey> getKey() const;
 
 	/**
 
-	\brief Sets the JWT *secret* from a QByteArray.
-	\param byteSecret JWT *secret* as a QByteArray.
-	\return true if the secret was set, false if the secret was not set.
+	\brief Sets the JWK.
+	\param key JsonWebKey.
+	\return true if the key was set, false if the key was not set.
 
-	This method checks for a valid secret format and returns false if the secret is invalid.
-
-	*/
-	bool          setSecret(const QByteArray &byteSecret);
-
-	/**
-
-	\brief Creates and sets a random secret.
-
-	This method creates a random secret with the length defined by QJsonWebToken::getRandLength(),
-	and the characters defined by QJsonWebToken::getRandAlphanum().
-
-	\sa QJsonWebToken::getRandLength().
-	\sa QJsonWebToken::getRandAlphanum().
+	This method checks for a valid key format and returns false if the key is invalid.
 
 	*/
-	void          setRandomSecret();
+	bool          setKey(const QSharedPointer<QJsonWebKey> &key);
 
 	/**
 
@@ -273,54 +266,6 @@ public:
 
 	/**
 
-	\brief Returns the current set of characters used to create random secrets.
-	\return Set of characters as a QString.
-
-	The default value is "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::setRandAlphanum()
-
-	*/
-	QString       getRandAlphanum() const;
-
-	/**
-
-	\brief Sets the current set of characters used to create random secrets.
-	\param strRandAlphanum Set of characters as a QString.
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::getRandAlphanum()
-
-	*/
-	void          setRandAlphanum(const QString &strRandAlphanum);
-
-	/**
-
-	\brief Returns the current length used to create random secrets.
-	\return Length of random secret as a QString.
-
-	The default value is 10;
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::setRandLength()
-
-	*/
-	int           getRandLength() const;
-
-	/**
-
-	\brief Sets the current length used to create random secrets.
-	\param intRandLength Length of random secret.
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::getRandLength()
-
-	*/
-	void          setRandLength(int intRandLength);
-
-	/**
-
 	\brief Checks validity of current JWT with respect to secret.
 	\return true if the JWT is valid with respect to secret, else false.
 
@@ -344,7 +289,7 @@ public:
 	values will be returned.
 
 	*/
-	static QJsonWebToken fromTokenAndSecret(const QString &strToken, const QByteArray &secret);
+	static QJsonWebToken fromTokenAndKey(const QString &strToken, const QSharedPointer<QJsonWebKey> &key);
 
 	/**
 
@@ -388,7 +333,6 @@ protected:
 	void updatePayload(const QJsonDocument &jdocPayload);
 	void updatePayload(const QByteArray &bytePayload);
 	void updateSignature();
-	QByteArray calcSignature(const QByteArray &data) const;
 
 private:
 	// properties
@@ -397,16 +341,48 @@ private:
 	QJsonDocument m_jdocHeader;	   // unencoded
 	QJsonDocument m_jdocPayload;   // unencoded
 	QByteArray    m_byteSignature; // unencoded
-	QByteArray    m_byteSecret;
 	QString       m_strAlgorithm;
-
-	int           m_intRandLength  ;
-	QString       m_strRandAlphanum;
 
 	// helpers
 	QByteArray    m_byteAllData;
 
+	QSharedPointer<QJsonWebKey> m_jwk;
+
 	static bool isAlgorithmSupported(QString strAlgorithm);
 };
+
+
+class QJsonWebKey
+{
+public:
+	typedef enum {
+		Octet,
+		RSA,
+		EC,
+	} KeyType;
+
+	virtual ~QJsonWebKey()
+	{}
+
+	virtual KeyType type() const = 0;
+	virtual bool isPrivate() const = 0;
+	virtual QByteArray sign(const QString &algorithm, const QByteArray &data) const = 0;
+	virtual bool verify(const QString &algorithm, const QByteArray &signature, const QByteArray &data) const = 0;
+
+	virtual QSharedPointer<QJsonWebKey> toPublic() = 0;
+	virtual QByteArray toJson() const = 0;
+
+	/**
+
+	\brief Returns a list of the supported algorithms.
+	\return List of supported algorithms as a QStringList.
+
+	*/
+	virtual QStringList supportedAlgorithms() const = 0;
+
+	static QSharedPointer<QJsonWebKey> fromJsonWebKey(const QByteArray &jwk);
+	static QSharedPointer<QJsonWebKey> fromOctet(const QByteArray &data);
+};
+
 
 #endif // QJSONWEBTOKEN_H

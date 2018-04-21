@@ -8,17 +8,17 @@
 #include "ui_dialog.h"
 
 Dialog::Dialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::Dialog)
+	QDialog(parent),
+	ui(new Ui::Dialog)
 {
-    ui->setupUi(this);
+	ui->setupUi(this);
 	// setup initial button color
 	ui->pushStatus->setStyleSheet("background-color: #ff8080; color: black; font: bold;");
 }
 
 Dialog::~Dialog()
 {
-    delete ui;
+	delete ui;
 }
 
 void Dialog::on_plainTextEncoded_textChanged()
@@ -47,7 +47,7 @@ void Dialog::on_plainTextEncoded_textChanged()
 		byteSecret = QByteArray::fromBase64(byteSecret, QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 	}
 	// set token and secret
-	QJsonWebToken token = QJsonWebToken::fromTokenAndSecret(strToken, byteSecret);
+	QJsonWebToken token = QJsonWebToken::fromTokenAndKey(strToken, QJsonWebKey::fromOctet(byteSecret));
 	// get decoded header and payload
 	QString strHeader = token.getHeaderQStr();
 	QString strPayload = token.getPayloadQStr();
