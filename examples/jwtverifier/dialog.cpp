@@ -42,8 +42,12 @@ void Dialog::on_plainTextEncoded_textChanged()
 		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : secret must be non-empty"));
 		return;
 	}
+	QByteArray byteSecret = strSecret.toUtf8();
+	if (ui->checkBoxIsOctet->isChecked()) {
+		byteSecret = QByteArray::fromBase64(byteSecret, QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	}
 	// set token and secret
-	QJsonWebToken token = QJsonWebToken::fromTokenAndSecret(strToken, strSecret);
+	QJsonWebToken token = QJsonWebToken::fromTokenAndSecret(strToken, byteSecret);
 	// get decoded header and payload
 	QString strHeader = token.getHeaderQStr();
 	QString strPayload = token.getPayloadQStr();
@@ -61,6 +65,11 @@ void Dialog::on_plainTextEncoded_textChanged()
 		ui->pushStatus->setStyleSheet("background-color: #ff8080; color: black; font: bold;");
 	}
 
+}
+
+void Dialog::on_checkBoxIsOctet_stateChanged()
+{
+	on_plainTextEncoded_textChanged();
 }
 
 void Dialog::on_lineEditSecret_textChanged(const QString &arg1)

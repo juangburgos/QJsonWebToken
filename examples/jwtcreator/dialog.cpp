@@ -23,8 +23,8 @@ Dialog::Dialog(QWidget *parent) :
 	m_jwtObj.setSecret("mydirtysecret");
 	// set a default payload
 	m_jwtObj.appendClaim("iss", "juangburgos");
-	m_jwtObj.appendClaim("iat", QString::number(QDateTime::currentDateTime().toTime_t()));
-	m_jwtObj.appendClaim("exp", QString::number(QDateTime::currentDateTime().addDays(7).toTime_t()));
+    m_jwtObj.appendClaim("iat", static_cast<qint64>(QDateTime::currentDateTime().toTime_t()));
+    m_jwtObj.appendClaim("exp", static_cast<qint64>(QDateTime::currentDateTime().addDays(7).toTime_t()));
 	m_jwtObj.appendClaim("aud", "everybody");
 	m_jwtObj.appendClaim("sub", "hey there");
 	// set current value to views
@@ -85,10 +85,10 @@ void Dialog::on_comboAlgorithm_currentIndexChanged(const QString &arg1)
 	ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
 }
 
-void Dialog::on_lineSecret_textChanged(const QString &arg1)
+void Dialog::on_lineSecret_textChanged(const QString &)
 {
     // set new secret
-    m_jwtObj.setSecret(ui->lineSecret->text());
+    m_jwtObj.setSecret(ui->lineSecret->text().toUtf8());
     // show new jwt
     ui->plainTextSignedJwt->setPlainText(m_jwtObj.getToken());
 }

@@ -23,7 +23,7 @@ QJsonWebToken::QJsonWebToken(const QJsonWebToken &other)
 	this->m_jdocHeader    = other.m_jdocHeader;
 	this->m_jdocPayload   = other.m_jdocPayload;
 	this->m_byteSignature = other.m_byteSignature;
-	this->m_strSecret     = other.m_strSecret;
+	this->m_byteSecret    = other.m_byteSecret;
 	this->m_strAlgorithm  = other.m_strAlgorithm;
 }
 
@@ -118,23 +118,7 @@ QByteArray QJsonWebToken::getSignature()
 	QByteArray bytePayloadBase64 = getPayloadQStr(QJsonDocument::JsonFormat::Compact).toUtf8().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 	// calculate signature based on chosen algorithm and secret
 	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
-	if (m_strAlgorithm.compare("HS256", Qt::CaseInsensitive) == 0)      // HMAC using SHA-256 hash algorithm
-	{
-		m_byteSignature = QMessageAuthenticationCode::hash(m_byteAllData, m_strSecret.toUtf8(), QCryptographicHash::Sha256);
-	}
-	else if (m_strAlgorithm.compare("HS384", Qt::CaseInsensitive) == 0) // HMAC using SHA-384 hash algorithm
-	{
-		m_byteSignature = QMessageAuthenticationCode::hash(m_byteAllData, m_strSecret.toUtf8(), QCryptographicHash::Sha384);
-	}
-	else if (m_strAlgorithm.compare("HS512", Qt::CaseInsensitive) == 0) // HMAC using SHA-512 hash algorithm
-	{
-		m_byteSignature = QMessageAuthenticationCode::hash(m_byteAllData, m_strSecret.toUtf8(), QCryptographicHash::Sha512);
-	}
-	// TODO : support other algorithms
-	else
-	{
-		m_byteSignature = QByteArray();
-	}
+	m_byteSignature = calcSignature(m_byteAllData);
 	// return recalculated
 	return m_byteSignature;
 }
@@ -145,29 +129,30 @@ QByteArray QJsonWebToken::getSignatureBase64()
 	return getSignature().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 }
 
-QString QJsonWebToken::getSecret()
+QByteArray QJsonWebToken::getSecret()
 {
-	return m_strSecret;
+	return m_byteSecret;
 }
 
-bool QJsonWebToken::setSecret(QString strSecret)
+bool QJsonWebToken::setSecret(QByteArray byteSecret)
 {
-	if (strSecret.isEmpty() || strSecret.isNull())
+	if (byteSecret.isEmpty() || byteSecret.isNull())
 	{
 		return false;
 	}
 
-	m_strSecret = strSecret;
+	m_byteSecret = byteSecret;
 
     return true;
 }
 
 void QJsonWebToken::setRandomSecret()
 {
-    m_strSecret.resize(m_intRandLength);
+    m_byteSecret.resize(m_intRandLength);
+    QByteArray byteRandAlphanum = m_strRandAlphanum.toUtf8();
     for (int i = 0; i < m_intRandLength; ++i)
     {
-        m_strSecret[i] = m_strRandAlphanum.at(rand() % (m_strRandAlphanum.length() - 1));
+        m_byteSecret[i] = byteRandAlphanum.at(rand() % (byteRandAlphanum.length() - 1));
     }
 }
 
@@ -211,11 +196,13 @@ bool QJsonWebToken::setToken(QString strToken)
 	{
 		return false;
 	}
+	m_byteHeader = QByteArray::fromBase64(listJwtParts.at(0).toUtf8(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	m_bytePayload = QByteArray::fromBase64(listJwtParts.at(1).toUtf8(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 	// check all parts are valid using another instance,
 	// so we dont overwrite this instance in case of error
 	QJsonWebToken tempTokenObj;
-	if ( !tempTokenObj.setHeaderQStr(QByteArray::fromBase64(listJwtParts.at(0).toUtf8(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals)) ||
-		 !tempTokenObj.setPayloadQStr(QByteArray::fromBase64(listJwtParts.at(1).toUtf8(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals)) )
+	if ( !tempTokenObj.setHeaderQStr(m_byteHeader) ||
+		 !tempTokenObj.setPayloadQStr(m_bytePayload) )
 	{
 		// try unencoded
 		if (!tempTokenObj.setHeaderQStr(listJwtParts.at(0)) ||
@@ -226,6 +213,8 @@ bool QJsonWebToken::setToken(QString strToken)
 		else
 		{
 			isBase64Encoded = false;
+			m_byteHeader = listJwtParts.at(0).toUtf8();
+			m_bytePayload = listJwtParts.at(1).toUtf8();
 		}
 	}
 	// set parts on this instance
@@ -273,25 +262,32 @@ void QJsonWebToken::setRandLength(int intRandLength)
     m_intRandLength = intRandLength;
 }
 
-bool QJsonWebToken::isValid()
+bool QJsonWebToken::isValid() const
 {
-	// calculate token on other instance,
-	// so we dont overwrite this instance's signature
-	QJsonWebToken tempTokenObj = *this;
-	if (m_byteSignature != tempTokenObj.getSignature())
-	{
-		return false;
-	}
-	return true;
+	return isValidSignature() && isValidJson();
 }
 
-QJsonWebToken QJsonWebToken::fromTokenAndSecret(QString strToken, QString srtSecret)
+bool QJsonWebToken::isValidSignature() const
+{
+	return m_byteSignature == calcSignature(m_byteHeader.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) + "." + m_bytePayload.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals));
+}
+
+bool QJsonWebToken::isValidJson() const
+{
+	QJsonParseError headerError, payloadError;
+	QJsonDocument header = QJsonDocument::fromJson(m_byteHeader, &headerError);
+	QJsonDocument payload = QJsonDocument::fromJson(m_bytePayload, &payloadError);
+	// TODO: RFC7515 Section 5.2 Message Signature o MAC Validation
+	return (! header.isNull() && ! payload.isNull() && headerError.error == QJsonParseError::NoError && payloadError.error == QJsonParseError::NoError);
+}
+
+QJsonWebToken QJsonWebToken::fromTokenAndSecret(QString strToken, QByteArray byteSecret)
 {
 	QJsonWebToken tempTokenObj;
 	// set Token
 	tempTokenObj.setToken(strToken);
 	// set Secret
-	tempTokenObj.setSecret(srtSecret);
+	tempTokenObj.setSecret(byteSecret);
 	// return
 	return tempTokenObj;
 }
@@ -334,4 +330,26 @@ QStringList QJsonWebToken::supportedAlgorithms()
 {
 	// TODO : support other algorithms
 	return QStringList() << "HS256" << "HS384" << "HS512";
+}
+
+QByteArray QJsonWebToken::calcSignature(const QByteArray &data) const
+{
+	// calculate
+	if (m_strAlgorithm.compare("HS256", Qt::CaseInsensitive) == 0)      // HMAC using SHA-256 hash algorithm
+	{
+		return QMessageAuthenticationCode::hash(data, m_byteSecret, QCryptographicHash::Sha256);
+	}
+	else if (m_strAlgorithm.compare("HS384", Qt::CaseInsensitive) == 0) // HMAC using SHA-384 hash algorithm
+	{
+		return QMessageAuthenticationCode::hash(data, m_byteSecret, QCryptographicHash::Sha384);
+	}
+	else if (m_strAlgorithm.compare("HS512", Qt::CaseInsensitive) == 0) // HMAC using SHA-512 hash algorithm
+	{
+		return QMessageAuthenticationCode::hash(data, m_byteSecret, QCryptographicHash::Sha512);
+	}
+	// TODO : support other algorithms
+	else
+	{
+		return QByteArray();
+	}
 }

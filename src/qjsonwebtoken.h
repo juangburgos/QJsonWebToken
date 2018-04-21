@@ -194,22 +194,22 @@ public:
 
 	/**
 
-	\brief Returns the JWT *secret* as a QString.
-	\return JWT *secret* as a QString.
+	\brief Returns the JWT *secret* as a QByteArray.
+	\return JWT *secret* as a QByteArray.
 
 	*/
-	QString       getSecret();
+	QByteArray    getSecret();
 
 	/**
 
-	\brief Sets the JWT *secret* from a QString.
-	\param strSecret JWT *secret* as a QString.
+	\brief Sets the JWT *secret* from a QByteArray.
+	\param byteSecret JWT *secret* as a QByteArray.
 	\return true if the secret was set, false if the secret was not set.
 
 	This method checks for a valid secret format and returns false if the secret is invalid.
 
 	*/
-	bool          setSecret(QString strSecret);
+	bool          setSecret(QByteArray byteSecret);
 
 	/**
 
@@ -339,20 +339,22 @@ public:
 	false is returned.
 
 	*/
-	bool          isValid();
+	bool          isValid() const;
+	bool          isValidSignature() const;
+	bool          isValidJson() const;
 
 	/**
 
 	\brief Creates a QJsonWebToken instance from the complete JWT and a secret.
 	\param strToken Complete JWT as a QString.
-	\param srtSecret Secret as a QString.
+	\param secret Secret as a QByteArray.
 	\return Instance of QJsonWebToken.
 
 	The JWT provided must have a valid format, else a QJsonWebToken instance with default
 	values will be returned.
 
 	*/
-	static QJsonWebToken fromTokenAndSecret(QString strToken, QString srtSecret);
+	static QJsonWebToken fromTokenAndSecret(QString strToken, QByteArray secret);
 
 	/**
 
@@ -384,12 +386,17 @@ public:
 	*/
 	void removeClaim(QString strClaimType);
 
+protected:
+	QByteArray calcSignature(const QByteArray &data) const;
+
 private:
 	// properties
+	QByteArray    m_byteHeader;    // original
+	QByteArray    m_bytePayload;   // original
 	QJsonDocument m_jdocHeader;	   // unencoded
 	QJsonDocument m_jdocPayload;   // unencoded
 	QByteArray    m_byteSignature; // unencoded
-	QString       m_strSecret;
+	QByteArray    m_byteSecret;
 	QString       m_strAlgorithm;
 
     int           m_intRandLength  ;
