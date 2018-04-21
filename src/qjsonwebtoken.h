@@ -372,7 +372,7 @@ public:
 	claim value is updated.
 
 	*/
-	void appendClaim(QString strClaimType, QString strValue);
+    void appendClaim(QString strClaimType, QJsonValue value);
 
 	/**
 

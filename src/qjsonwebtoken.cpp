@@ -296,11 +296,11 @@ QJsonWebToken QJsonWebToken::fromTokenAndSecret(QString strToken, QString srtSec
 	return tempTokenObj;
 }
 
-void QJsonWebToken::appendClaim(QString strClaimType, QString strValue)
+void QJsonWebToken::appendClaim(QString strClaimType, QJsonValue value)
 {
 	// have to make a copy of the json object, modify the copy and then put it back, sigh
 	QJsonObject jObj = m_jdocPayload.object();
-	jObj.insert(strClaimType, strValue);
+	jObj.insert(strClaimType, value);
 	m_jdocPayload = QJsonDocument(jObj);
 }
 
