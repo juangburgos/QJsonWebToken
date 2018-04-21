@@ -8,23 +8,40 @@
 
 #include <QDebug>
 
-QJsonWebToken::QJsonWebToken()
+// RFC7515 Section 2 Terminology
+// Base64url Encoding:
+//   Base64 encoding using the URL- and filename-safe character set
+//   defined in Section 5 of RFC 4648 [RFC4648], with all trailing '='
+//   characters omitted (as permitted by Section 3.2) and without the
+//   inclusion of any line breaks, whitespace, or other additional
+//   characters.  Note that the base64url encoding of the empty octet
+//   sequence is the empty string.  (See Appendix C for notes on
+//   implementing base64url encoding without padding.)
+QByteArray toBase64Url(const QByteArray &data)
+{
+	return data.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+}
+
+QByteArray fromBase64Url(const QByteArray &base64)
+{
+	return QByteArray::fromBase64(base64, QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+}
+
+QJsonWebToken::QJsonWebToken() :
+	m_byteHeader(),
+	m_bytePayload(),
+	m_jdocHeader(),
+	m_jdocPayload(QJsonDocument::fromJson("{}")),
+	m_byteSignature(),
+	m_byteSecret(),
+	m_strAlgorithm(),
+	// default for random generation
+	m_intRandLength(10),
+	m_strRandAlphanum("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
+	m_byteAllData()
 {
 	// create the header with default algorithm
 	setAlgorithmStr("HS256");
-	m_jdocPayload = QJsonDocument::fromJson("{}");
-    // default for random generation
-    m_intRandLength   = 10;
-    m_strRandAlphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-}
-
-QJsonWebToken::QJsonWebToken(const QJsonWebToken &other)
-{
-	this->m_jdocHeader    = other.m_jdocHeader;
-	this->m_jdocPayload   = other.m_jdocPayload;
-	this->m_byteSignature = other.m_byteSignature;
-	this->m_byteSecret    = other.m_byteSecret;
-	this->m_strAlgorithm  = other.m_strAlgorithm;
 }
 
 QJsonDocument QJsonWebToken::getHeaderJDoc()
@@ -32,43 +49,48 @@ QJsonDocument QJsonWebToken::getHeaderJDoc()
 	return m_jdocHeader;
 }
 
-QString QJsonWebToken::getHeaderQStr(QJsonDocument::JsonFormat format /*= QJsonDocument::JsonFormat::Indented*/)
+QString QJsonWebToken::getHeaderQStr(bool pretty) const
 {
-	return m_jdocHeader.toJson(format);
+	if (pretty)
+	{
+		return m_jdocHeader.toJson(QJsonDocument::JsonFormat::Indented);
+	}
+	else
+	{
+		return QString::fromUtf8(m_byteHeader);
+	}
 }
 
-bool QJsonWebToken::setHeaderJDoc(QJsonDocument jdocHeader)
+QByteArray QJsonWebToken::getHeaderJson() const
 {
-	if (jdocHeader.isEmpty() || jdocHeader.isNull() || !jdocHeader.isObject())
+	return m_byteHeader;
+}
+
+bool QJsonWebToken::setHeaderJDoc(const QJsonDocument &jdocHeader)
+{
+	if (!isValidHeader(jdocHeader))
 	{
 		return false;
 	}
 
-	// check if supported algorithm
-	QString strAlgorithm = jdocHeader.object().value("alg").toString("");
-	if (!isAlgorithmSupported(strAlgorithm))
-	{
-		return false;
-	}
-
-	m_jdocHeader = jdocHeader;
-
-	// set also new algorithm
-	m_strAlgorithm = strAlgorithm;
+	updateHeader(jdocHeader);
 
 	return true;
 }
 
 bool QJsonWebToken::setHeaderQStr(QString strHeader)
 {
-	QJsonParseError error;
-	QJsonDocument tmpHeader = QJsonDocument::fromJson(strHeader.toUtf8(), &error);
+	return setHeaderJson(strHeader.toUtf8());
+}
 
-	// validate and set header
-	if (error.error != QJsonParseError::NoError || !setHeaderJDoc(tmpHeader))
+bool QJsonWebToken::setHeaderJson(const QByteArray &jsonHeader)
+{
+	if (!isValidHeader(jsonHeader))
 	{
 		return false;
 	}
+
+	updateHeader(jsonHeader);
 
 	return true;
 }
@@ -78,63 +100,68 @@ QJsonDocument QJsonWebToken::getPayloadJDoc()
 	return m_jdocPayload;
 }
 
-QString QJsonWebToken::getPayloadQStr(QJsonDocument::JsonFormat format /*= QJsonDocument::JsonFormat::Indented*/)
+QString QJsonWebToken::getPayloadQStr(bool pretty) const
 {
-	return m_jdocPayload.toJson(format);
+	if (pretty)
+	{
+		return m_jdocPayload.toJson(QJsonDocument::JsonFormat::Indented);
+	}
+	else
+	{
+		return QString::fromUtf8(m_bytePayload);
+	}
 }
 
-bool QJsonWebToken::setPayloadJDoc(QJsonDocument jdocPayload)
+QByteArray QJsonWebToken::getPayloadJson() const
 {
-	if (jdocPayload.isEmpty() || jdocPayload.isNull() || !jdocPayload.isObject())
+	return m_bytePayload;
+}
+
+bool QJsonWebToken::setPayloadJDoc(const QJsonDocument &jdocPayload)
+{
+	if (!isValidPayload(jdocPayload))
 	{
 		return false;
 	}
 
-	m_jdocPayload = jdocPayload;
+	updatePayload(jdocPayload);
 
 	return true;
 }
 
-bool QJsonWebToken::setPayloadQStr(QString strPayload)
+bool QJsonWebToken::setPayloadQStr(const QString &strPayload)
 {
-	QJsonParseError error;
-	QJsonDocument tmpPayload = QJsonDocument::fromJson(strPayload.toUtf8(), &error);
+	return setPayloadJson(strPayload.toUtf8());
+}
 
-	// validate and set payload
-	if (error.error != QJsonParseError::NoError || !setPayloadJDoc(tmpPayload))
+bool QJsonWebToken::setPayloadJson(const QByteArray &jsonPayload)
+{
+	if (!isValidPayload(jsonPayload))
 	{
 		return false;
 	}
 
+	updatePayload(jsonPayload);
+
 	return true;
 }
 
-QByteArray QJsonWebToken::getSignature()
+QByteArray QJsonWebToken::getSignature() const
 {
-	// recalculate
-	// get header in compact mode and base64 encoded
-	QByteArray byteHeaderBase64  = getHeaderQStr(QJsonDocument::JsonFormat::Compact).toUtf8().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-	// get payload in compact mode and base64 encoded
-	QByteArray bytePayloadBase64 = getPayloadQStr(QJsonDocument::JsonFormat::Compact).toUtf8().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-	// calculate signature based on chosen algorithm and secret
-	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
-	m_byteSignature = calcSignature(m_byteAllData);
-	// return recalculated
 	return m_byteSignature;
 }
 
-QByteArray QJsonWebToken::getSignatureBase64()
+QByteArray QJsonWebToken::getSignatureBase64() const
 {
-	// note we return through getSignature() to force recalculation
-	return getSignature().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	return toBase64Url(getSignature());
 }
 
-QByteArray QJsonWebToken::getSecret()
+QByteArray QJsonWebToken::getSecret() const
 {
 	return m_byteSecret;
 }
 
-bool QJsonWebToken::setSecret(QByteArray byteSecret)
+bool QJsonWebToken::setSecret(const QByteArray &byteSecret)
 {
 	if (byteSecret.isEmpty() || byteSecret.isNull())
 	{
@@ -142,26 +169,27 @@ bool QJsonWebToken::setSecret(QByteArray byteSecret)
 	}
 
 	m_byteSecret = byteSecret;
+	updateSignature();
 
-    return true;
+	return true;
 }
 
 void QJsonWebToken::setRandomSecret()
 {
-    m_byteSecret.resize(m_intRandLength);
-    QByteArray byteRandAlphanum = m_strRandAlphanum.toUtf8();
-    for (int i = 0; i < m_intRandLength; ++i)
-    {
-        m_byteSecret[i] = byteRandAlphanum.at(rand() % (byteRandAlphanum.length() - 1));
-    }
+	m_byteSecret.resize(m_intRandLength);
+	QByteArray byteRandAlphanum = m_strRandAlphanum.toUtf8();
+	for (int i = 0; i < m_intRandLength; ++i)
+	{
+		m_byteSecret[i] = byteRandAlphanum.at(rand() % (byteRandAlphanum.length() - 1));
+	}
 }
 
-QString QJsonWebToken::getAlgorithmStr()
+QString QJsonWebToken::getAlgorithmStr() const
 {
 	return m_strAlgorithm;
 }
 
-bool QJsonWebToken::setAlgorithmStr(QString strAlgorithm)
+bool QJsonWebToken::setAlgorithmStr(const QString &strAlgorithm)
 {
 	// check if supported algorithm
 	if (!isAlgorithmSupported(strAlgorithm))
@@ -171,14 +199,14 @@ bool QJsonWebToken::setAlgorithmStr(QString strAlgorithm)
 	// set algorithm
 	m_strAlgorithm = strAlgorithm;
 	// modify header
-	m_jdocHeader = QJsonDocument::fromJson(QObject::trUtf8("{\"typ\": \"JWT\", \"alg\" : \"").toUtf8()
-		                                 + m_strAlgorithm.toUtf8()
-		                                 + QObject::trUtf8("\"}").toUtf8());
+	setHeaderJDoc(QJsonDocument::fromJson(QObject::trUtf8("{\"typ\": \"JWT\", \"alg\" : \"").toUtf8()
+                                          + m_strAlgorithm.toUtf8()
+                                          + QObject::trUtf8("\"}").toUtf8()));
 
 	return true;
 }
 
-QString QJsonWebToken::getToken()
+QString QJsonWebToken::getToken() const
 {
 	// important to execute first to update m_byteAllData which contains header + "." + payload in base64
 	QByteArray byteSignatureBase64 = getSignatureBase64();
@@ -186,7 +214,7 @@ QString QJsonWebToken::getToken()
 	return m_byteAllData + "." + byteSignatureBase64;
 }
 
-bool QJsonWebToken::setToken(QString strToken)
+bool QJsonWebToken::setToken(const QString &strToken)
 {
 	// assume base64 encoded at first, if not try decoding
 	bool isBase64Encoded = true;
@@ -196,8 +224,8 @@ bool QJsonWebToken::setToken(QString strToken)
 	{
 		return false;
 	}
-	m_byteHeader = QByteArray::fromBase64(listJwtParts.at(0).toUtf8(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-	m_bytePayload = QByteArray::fromBase64(listJwtParts.at(1).toUtf8(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	m_byteHeader = fromBase64Url(listJwtParts.at(0).toUtf8());
+	m_bytePayload = fromBase64Url(listJwtParts.at(1).toUtf8());
 	// check all parts are valid using another instance,
 	// so we dont overwrite this instance in case of error
 	QJsonWebToken tempTokenObj;
@@ -218,48 +246,47 @@ bool QJsonWebToken::setToken(QString strToken)
 		}
 	}
 	// set parts on this instance
-	setHeaderQStr(tempTokenObj.getHeaderQStr());
-	setPayloadQStr(tempTokenObj.getPayloadQStr());
+	setHeaderJson(tempTokenObj.getHeaderJson());
+	setPayloadJson(tempTokenObj.getPayloadJson());
+	// set specified signature
 	if (isBase64Encoded)
 	{ // unencode
-		m_byteSignature = QByteArray::fromBase64(listJwtParts.at(2).toUtf8(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+		m_byteSignature = fromBase64Url(listJwtParts.at(2).toUtf8());
 	} 
 	else
 	{
 		m_byteSignature = listJwtParts.at(2).toUtf8();
 	}
-	// allData not valid anymore
-	m_byteAllData.clear();
 	// success
-    return true;
+	return true;
 }
 
-QString QJsonWebToken::getRandAlphanum()
+QString QJsonWebToken::getRandAlphanum() const
 {
-    return m_strRandAlphanum;
+	return m_strRandAlphanum;
 }
 
-void QJsonWebToken::setRandAlphanum(QString strRandAlphanum)
+void QJsonWebToken::setRandAlphanum(const QString &strRandAlphanum)
 {
-    if(strRandAlphanum.isNull())
-    {
-        return;
-    }
-    m_strRandAlphanum = strRandAlphanum;
+	if(strRandAlphanum.isNull())
+	{
+		return;
+	}
+	m_strRandAlphanum = strRandAlphanum;
 }
 
-int QJsonWebToken::getRandLength()
+int QJsonWebToken::getRandLength() const
 {
-    return m_intRandLength;
+	return m_intRandLength;
 }
 
 void QJsonWebToken::setRandLength(int intRandLength)
 {
-    if(intRandLength < 0 || intRandLength > 1e6)
-    {
-        return;
-    }
-    m_intRandLength = intRandLength;
+	if(intRandLength < 0 || intRandLength > 1e6)
+	{
+		return;
+	}
+	m_intRandLength = intRandLength;
 }
 
 bool QJsonWebToken::isValid() const
@@ -269,7 +296,7 @@ bool QJsonWebToken::isValid() const
 
 bool QJsonWebToken::isValidSignature() const
 {
-	return m_byteSignature == calcSignature(m_byteHeader.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) + "." + m_bytePayload.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals));
+	return m_byteSignature == calcSignature(m_byteAllData);
 }
 
 bool QJsonWebToken::isValidJson() const
@@ -281,31 +308,106 @@ bool QJsonWebToken::isValidJson() const
 	return (! header.isNull() && ! payload.isNull() && headerError.error == QJsonParseError::NoError && payloadError.error == QJsonParseError::NoError);
 }
 
-QJsonWebToken QJsonWebToken::fromTokenAndSecret(QString strToken, QByteArray byteSecret)
+QJsonWebToken QJsonWebToken::fromTokenAndSecret(const QString &strToken, const QByteArray &byteSecret)
 {
 	QJsonWebToken tempTokenObj;
-	// set Token
-	tempTokenObj.setToken(strToken);
 	// set Secret
 	tempTokenObj.setSecret(byteSecret);
+	// set Token
+	tempTokenObj.setToken(strToken);
 	// return
 	return tempTokenObj;
 }
 
-void QJsonWebToken::appendClaim(QString strClaimType, QJsonValue value)
+void QJsonWebToken::appendClaim(const QString &strClaimType, const QJsonValue &value)
 {
 	// have to make a copy of the json object, modify the copy and then put it back, sigh
 	QJsonObject jObj = m_jdocPayload.object();
 	jObj.insert(strClaimType, value);
-	m_jdocPayload = QJsonDocument(jObj);
+	setPayloadJDoc(QJsonDocument(jObj));
 }
 
-void QJsonWebToken::removeClaim(QString strClaimType)
+void QJsonWebToken::removeClaim(const QString &strClaimType)
 {
 	// have to make a copy of the json object, modify the copy and then put it back, sigh
 	QJsonObject jObj = m_jdocPayload.object();
 	jObj.remove(strClaimType);
-	m_jdocPayload = QJsonDocument(jObj);
+	setPayloadJDoc(QJsonDocument(jObj));
+}
+
+bool QJsonWebToken::isValidHeader(const QJsonDocument &jdocHeader)
+{
+	return ! jdocHeader.isEmpty() && ! jdocHeader.isNull() && jdocHeader.isObject() && isAlgorithmSupported(jdocHeader.object().value("alg").toString(""));
+}
+
+bool QJsonWebToken::isValidHeader(const QByteArray &byteHeader)
+{
+	QJsonParseError error;
+	return isValidHeader(QJsonDocument::fromJson(byteHeader, &error)) && error.error == QJsonParseError::NoError;
+}
+
+bool QJsonWebToken::isValidPayload(const QJsonDocument &jdocPayload)
+{
+	return ! jdocPayload.isEmpty() && ! jdocPayload.isNull() && jdocPayload.isObject();
+}
+
+bool QJsonWebToken::isValidPayload(const QByteArray &bytePayload)
+{
+	QJsonParseError error;
+	return isValidPayload(QJsonDocument::fromJson(bytePayload, &error)) && error.error == QJsonParseError::NoError;
+}
+
+void QJsonWebToken::updateHeader(const QJsonDocument &jdocHeader)
+{
+	//assert(isValidHeader(jdocHeader));
+	m_jdocHeader = jdocHeader;
+	m_byteHeader = jdocHeader.toJson(QJsonDocument::JsonFormat::Compact);
+	updateHeaderAlgorithm();
+	updateSignature();
+}
+
+void QJsonWebToken::updateHeader(const QByteArray &byteHeader)
+{
+	//assert(isValidHeader(byteHeader));
+	m_byteHeader = byteHeader;
+	m_jdocHeader = QJsonDocument::fromJson(byteHeader);
+	updateHeaderAlgorithm();
+	updateSignature();
+}
+
+void QJsonWebToken::updateHeaderAlgorithm()
+{
+	//assert(isValidHeader(byteHeader));
+	// set also new algorithm
+	m_strAlgorithm = m_jdocHeader.object().value("alg").toString("");
+}
+
+void QJsonWebToken::updatePayload(const QJsonDocument &jdocPayload)
+{
+	//assert(isValidPayload(jdocPayload));
+	m_jdocPayload = jdocPayload;
+	m_bytePayload = jdocPayload.toJson(QJsonDocument::JsonFormat::Compact);
+	updateSignature();
+}
+
+void QJsonWebToken::updatePayload(const QByteArray &bytePayload)
+{
+	//assert(isValidPayload(bytePayload));
+	m_bytePayload = bytePayload;
+	m_jdocPayload = QJsonDocument::fromJson(bytePayload);
+	updateSignature();
+}
+
+void QJsonWebToken::updateSignature()
+{
+	// recalculate
+	// get header in compact mode and base64 encoded
+	QByteArray byteHeaderBase64  = toBase64Url(m_jdocHeader.toJson(QJsonDocument::JsonFormat::Compact));
+	// get payload in compact mode and base64 encoded
+	QByteArray bytePayloadBase64 = toBase64Url(m_jdocPayload.toJson(QJsonDocument::JsonFormat::Compact));
+	// calculate signature based on chosen algorithm and secret
+	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
+	m_byteSignature = calcSignature(m_byteAllData);
 }
 
 bool QJsonWebToken::isAlgorithmSupported(QString strAlgorithm)
