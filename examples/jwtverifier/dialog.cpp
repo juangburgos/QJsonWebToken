@@ -8,17 +8,17 @@
 #include "ui_dialog.h"
 
 Dialog::Dialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::Dialog)
+	QDialog(parent),
+	ui(new Ui::Dialog)
 {
-    ui->setupUi(this);
+	ui->setupUi(this);
 	// setup initial button color
 	ui->pushStatus->setStyleSheet("background-color: #ff8080; color: black; font: bold;");
 }
 
 Dialog::~Dialog()
 {
-    delete ui;
+	delete ui;
 }
 
 void Dialog::on_plainTextEncoded_textChanged()
@@ -34,16 +34,16 @@ void Dialog::on_plainTextEncoded_textChanged()
 		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : token must have the format xxxx.yyyyy.zzzzz"));
 		return;
 	}
-	QString strSecret = ui->lineEditSecret->text();
-	if (strSecret.isEmpty())
+	QString key = ui->plainTextEditKey->toPlainText();
+	if (key.isEmpty())
 	{
 		// show error
-		ui->plainTextHeader->setPlainText(QObject::trUtf8("ERROR : secret must be non-empty"));
-		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : secret must be non-empty"));
+		ui->plainTextHeader->setPlainText(QObject::trUtf8("ERROR : key must be non-empty"));
+		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : key must be non-empty"));
 		return;
 	}
 	// set token and secret
-	QJsonWebToken token = QJsonWebToken::fromTokenAndSecret(strToken, strSecret);
+	QJsonWebToken token = QJsonWebToken::fromTokenAndKey(strToken, QJsonWebKey::fromJsonWebKey(key.toUtf8()));
 	// get decoded header and payload
 	QString strHeader = token.getHeaderQStr();
 	QString strPayload = token.getPayloadQStr();
@@ -63,7 +63,12 @@ void Dialog::on_plainTextEncoded_textChanged()
 
 }
 
-void Dialog::on_lineEditSecret_textChanged(const QString &arg1)
+void Dialog::on_checkBoxIsOctet_stateChanged()
+{
+	on_plainTextEncoded_textChanged();
+}
+
+void Dialog::on_plainTextEditKey_textChanged()
 {
 	on_plainTextEncoded_textChanged();
 }

@@ -108,12 +108,12 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>Secret : </string>
+             <string>JWK : </string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
            </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="lineEditSecret"/>
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_2">
@@ -134,6 +134,9 @@
              <bool>false</bool>
             </property>
            </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPlainTextEdit" name="plainTextEditKey"/>
           </item>
          </layout>
         </widget>

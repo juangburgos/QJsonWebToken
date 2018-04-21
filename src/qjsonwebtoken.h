@@ -17,8 +17,18 @@
 
 #include <QObject>
 #include <QMessageAuthenticationCode>
+#include <QSharedPointer>
 #include <QJsonDocument>
 #include <QJsonObject>
+
+#ifdef USE_QCA
+#include <QtCrypto>
+#endif // USE_QCA
+
+
+// forward declaration
+class QJsonWebKey;
+
 
 /**
 
@@ -69,7 +79,7 @@ public:
 	and empty *secret*.
 
 	*/
-    QJsonWebToken();                            // TODO : improve with params
+	QJsonWebToken();                            // TODO : improve with params
 
 	/**
 
@@ -80,7 +90,7 @@ public:
 	Copies to the new instance the JWT *header*, *payload*, *signature*, *secret* and *algorithm*.
 
 	*/
-	QJsonWebToken(const QJsonWebToken &other); 
+	QJsonWebToken(const QJsonWebToken &other) = default;
 
 	/**
 
@@ -99,7 +109,8 @@ public:
 	Format can be *QJsonDocument::JsonFormat::Indented* or *QJsonDocument::JsonFormat::Compact*
 
 	*/
-	QString       getHeaderQStr(QJsonDocument::JsonFormat format = QJsonDocument::JsonFormat::Indented);
+	QString       getHeaderQStr(bool pretty=true) const;
+	QByteArray    getHeaderJson() const;
 
 	/**
 
@@ -110,7 +121,7 @@ public:
 	This method checks for a valid header format and returns false if the header is invalid.
 
 	*/
-	bool          setHeaderJDoc(QJsonDocument jdocHeader);
+	bool          setHeaderJDoc(const QJsonDocument &jdocHeader);
 
 	/**
 
@@ -122,6 +133,7 @@ public:
 
 	*/
 	bool          setHeaderQStr(QString strHeader);
+	bool          setHeaderJson(const QByteArray &jsonHeader);
 
 	/**
 
@@ -140,7 +152,8 @@ public:
 	Format can be *QJsonDocument::JsonFormat::Indented* or *QJsonDocument::JsonFormat::Compact*
 
 	*/
-	QString       getPayloadQStr(QJsonDocument::JsonFormat format = QJsonDocument::JsonFormat::Indented);
+	QString       getPayloadQStr(bool pretty=true) const;
+	QByteArray    getPayloadJson() const;
 
 	/**
 
@@ -151,7 +164,7 @@ public:
 	This method checks for a valid payload format and returns false if the payload is invalid.
 
 	*/
-	bool          setPayloadJDoc(QJsonDocument jdocPayload);
+	bool          setPayloadJDoc(const QJsonDocument &jdocPayload);
 
 	/**
 
@@ -162,67 +175,41 @@ public:
 	This method checks for a valid payload format and returns false if the payload is invalid.
 
 	*/
-	bool          setPayloadQStr(QString strPayload);
+	bool          setPayloadQStr(const QString &strPayload);
+	bool          setPayloadJson(const QByteArray &jsonPayload);
 
 	/**
 
 	\brief Returns the JWT *signature* as a QByteArray.
 	\return JWT *signature* as a decoded QByteArray.
-
-	Recalculates the JWT signature given the current *header*, *payload*, *algorithm* and
-	*secret*.
-
-	\warning This method overwrites the old signature internally. This could be undesired when
-	the signature was obtained by copying from another QJsonWebToken using the copy constructor.
-
 	*/
-	QByteArray    getSignature();		// WARNING overwrites signature
+	QByteArray    getSignature() const;
 
 	/**
 
 	\brief Returns the JWT *signature* as a QByteArray.
 	\return JWT *signature* as a **base64 encoded** QByteArray.
-
-	Recalculates the JWT signature given the current *header*, *payload*, *algorithm* and
-	*secret*. Then encodes the calculated signature using base64 encoding.
-
-	\warning This method overwrites the old signature internally. This could be undesired when
-	the signature was obtained by copying from another QJsonWebToken using the copy constructor.
-
 	*/
-	QByteArray    getSignatureBase64(); // WARNING overwrites signature
+	QByteArray    getSignatureBase64() const;
 
 	/**
 
-	\brief Returns the JWT *secret* as a QString.
-	\return JWT *secret* as a QString.
+	\brief Returns the JWK.
+	\return JsonWebKey.
 
 	*/
-	QString       getSecret();
+	QSharedPointer<QJsonWebKey> getKey() const;
 
 	/**
 
-	\brief Sets the JWT *secret* from a QString.
-	\param strSecret JWT *secret* as a QString.
-	\return true if the secret was set, false if the secret was not set.
+	\brief Sets the JWK.
+	\param key JsonWebKey.
+	\return true if the key was set, false if the key was not set.
 
-	This method checks for a valid secret format and returns false if the secret is invalid.
-
-	*/
-	bool          setSecret(QString strSecret);
-
-	/**
-
-	\brief Creates and sets a random secret.
-
-	This method creates a random secret with the length defined by QJsonWebToken::getRandLength(),
-	and the characters defined by QJsonWebToken::getRandAlphanum().
-
-	\sa QJsonWebToken::getRandLength().
-	\sa QJsonWebToken::getRandAlphanum().
+	This method checks for a valid key format and returns false if the key is invalid.
 
 	*/
-    void          setRandomSecret();
+	bool          setKey(const QSharedPointer<QJsonWebKey> &key);
 
 	/**
 
@@ -230,7 +217,7 @@ public:
 	\return JWT *algorithm* as a QString.
 
 	*/
-	QString       getAlgorithmStr();
+	QString       getAlgorithmStr() const;
 
 	/**
 
@@ -245,7 +232,7 @@ public:
 	\sa QJsonWebToken::supportedAlgorithms().
 
 	*/
-	bool          setAlgorithmStr(QString strAlgorithm);
+	bool          setAlgorithmStr(const QString &strAlgorithm);
 
 	/**
 
@@ -265,7 +252,7 @@ public:
 	- *zzzzz* is the *signature* enconded in base64.
 
 	*/
-	QString       getToken();
+	QString       getToken() const;
 
 	/**
 
@@ -279,55 +266,7 @@ public:
 	\sa QJsonWebToken::getToken().
 
 	*/
-	bool          setToken(QString strToken);
-
-	/**
-
-	\brief Returns the current set of characters used to create random secrets.
-	\return Set of characters as a QString.
-
-	The default value is "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::setRandAlphanum()
-
-	*/
-    QString       getRandAlphanum();
-
-	/**
-
-	\brief Sets the current set of characters used to create random secrets.
-	\param strRandAlphanum Set of characters as a QString.
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::getRandAlphanum()
-
-	*/
-    void          setRandAlphanum(QString strRandAlphanum);
-
-	/**
-
-	\brief Returns the current length used to create random secrets.
-	\return Length of random secret as a QString.
-
-	The default value is 10;
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::setRandLength()
-
-	*/
-    int           getRandLength();
-
-	/**
-
-	\brief Sets the current length used to create random secrets.
-	\param intRandLength Length of random secret.
-
-	\sa QJsonWebToken::setRandomSecret()
-	\sa QJsonWebToken::getRandLength()
-
-	*/
-    void          setRandLength(int intRandLength);
+	bool          setToken(const QString &strToken);
 
 	/**
 
@@ -339,20 +278,22 @@ public:
 	false is returned.
 
 	*/
-	bool          isValid();
+	bool          isValid() const;
+	bool          isValidSignature() const;
+	bool          isValidJson() const;
 
 	/**
 
 	\brief Creates a QJsonWebToken instance from the complete JWT and a secret.
 	\param strToken Complete JWT as a QString.
-	\param srtSecret Secret as a QString.
+	\param secret Secret as a QByteArray.
 	\return Instance of QJsonWebToken.
 
 	The JWT provided must have a valid format, else a QJsonWebToken instance with default
 	values will be returned.
 
 	*/
-	static QJsonWebToken fromTokenAndSecret(QString strToken, QString srtSecret);
+	static QJsonWebToken fromTokenAndKey(const QString &strToken, const QSharedPointer<QJsonWebKey> &key);
 
 	/**
 
@@ -372,7 +313,7 @@ public:
 	claim value is updated.
 
 	*/
-	void appendClaim(QString strClaimType, QString strValue);
+	void appendClaim(const QString &strClaimType, const QJsonValue &value);
 
 	/**
 
@@ -382,23 +323,71 @@ public:
 	If the claim type does not exist in the *payload*, then this method does nothins.
 
 	*/
-	void removeClaim(QString strClaimType);
+	void removeClaim(const QString &strClaimType);
+
+	static bool isValidHeader(const QJsonDocument &jdocHeader);
+	static bool isValidHeader(const QByteArray &byteHeader);
+	static bool isValidPayload(const QJsonDocument &jdocPayload);
+	static bool isValidPayload(const QByteArray &bytePayload);
+
+protected:
+	void updateHeader(const QJsonDocument &jdocHeader);
+	void updateHeader(const QByteArray &byteHeader);
+	void updateHeaderAlgorithm();
+	void updatePayload(const QJsonDocument &jdocPayload);
+	void updatePayload(const QByteArray &bytePayload);
+	void updateSignature();
 
 private:
 	// properties
+	QByteArray    m_byteHeader;    // original
+	QByteArray    m_bytePayload;   // original
 	QJsonDocument m_jdocHeader;	   // unencoded
 	QJsonDocument m_jdocPayload;   // unencoded
 	QByteArray    m_byteSignature; // unencoded
-	QString       m_strSecret;
 	QString       m_strAlgorithm;
-
-    int           m_intRandLength  ;
-    QString       m_strRandAlphanum;
 
 	// helpers
 	QByteArray    m_byteAllData;
 
-	bool isAlgorithmSupported(QString strAlgorithm);
+	QSharedPointer<QJsonWebKey> m_jwk;
+
+	static bool isAlgorithmSupported(QString strAlgorithm);
 };
+
+
+class QJsonWebKey
+{
+public:
+	typedef enum {
+		Octet,
+		RSA,
+		EC,
+	} KeyType;
+
+	virtual ~QJsonWebKey()
+	{}
+
+	virtual KeyType type() const = 0;
+	virtual bool isPrivate() const = 0;
+	virtual QByteArray sign(const QString &algorithm, const QByteArray &data) const = 0;
+	virtual bool verify(const QString &algorithm, const QByteArray &signature, const QByteArray &data) const = 0;
+
+	virtual QSharedPointer<QJsonWebKey> toPublic() = 0;
+	virtual QByteArray toJson() const = 0;
+
+	/**
+
+	\brief Returns a list of the supported algorithms.
+	\return List of supported algorithms as a QStringList.
+
+	*/
+	virtual QStringList supportedAlgorithms() const = 0;
+
+	static QSharedPointer<QJsonWebKey> fromJsonWebKey(const QByteArray &jwk);
+	static QSharedPointer<QJsonWebKey> fromOctet(const QByteArray &data);
+	static QSharedPointer<QJsonWebKey> generateRSAPrivateKey(int bits);
+};
+
 
 #endif // QJSONWEBTOKEN_H

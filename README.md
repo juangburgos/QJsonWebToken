@@ -7,11 +7,14 @@ open standard [RFC 7519](https://tools.ietf.org/html/rfc7519).
 
 Currently this implementation **only supports** the following algorithms:
 
-Alg   | Parameter Value	Algorithm
------ | ------------------------------------
-HS256 | HMAC using SHA-256 hash algorithm
-HS384 | HMAC using SHA-384 hash algorithm
-HS512 | HMAC using SHA-512 hash algorithm
+Alg   | Parameter Value	Algorithm         | Using library
+----- | --------------------------------- | --------------
+HS256 | HMAC using SHA-256 hash algorithm | Qt
+HS384 | HMAC using SHA-384 hash algorithm | Qt
+HS512 | HMAC using SHA-512 hash algorithm | Qt
+RS256 | RSA using SHA-256 hash algorithm  | QCA (optional)
+RS384 | RSA using SHA-384 hash algorithm  | QCA (optional)
+RS512 | RSA using SHA-512 hash algorithm  | QCA (optional)
 
 ### Include
 
@@ -29,10 +32,6 @@ The repository of this project includes examples that demonstrate the use of thi
 * ```./examples/jwtcreator/```  : Example that shows how to create a JWT with your custom *payload*.
 
 * ```./examples/jwtverifier/``` : Example that shows how to validate a JWT with a given *secret*.
-
-### Limitations
-
-Currently, `QJsonWebToken` validator, can **only** validate tokens created by `QJsonWebToken` itself. This limitation is due to the usage of Qt's [QJsonDocument API](http://doc.qt.io/qt-5/qjsondocument.html), see [this issue for further explanation](https://github.com/juangburgos/QJsonWebToken/issues/3#issuecomment-333056575).
 
 ### License
 
