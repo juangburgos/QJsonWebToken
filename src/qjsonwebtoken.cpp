@@ -292,8 +292,9 @@ QSharedPointer<QJsonWebKey> QJsonWebKey::fromJsonWebKey(const QByteArray &jwk)
 	{
 		return fromOctet(fromBase64Url(obj.value("k").toString("").toUtf8()));
 	}
-	else if (type == JWK_ALG_RSA && obj.contains("n") && obj.contains("e") && obj.contains("d") && obj.contains("p") && obj.contains("q") && obj.contains("dp") && obj.contains("dq") && obj.contains("qi"))
+	else if (type == JWK_ALG_RSA && obj.contains("n") && obj.contains("e") && obj.contains("d") && obj.contains("p") && obj.contains("q"))
 	{
+		// private RSA
 #ifdef USE_QCA
 		QCA::BigInteger n = QCA::SecureArray(fromBase64Url(obj.value("n").toString("")));
 		QCA::BigInteger e = QCA::SecureArray(fromBase64Url(obj.value("e").toString("")));
@@ -304,7 +305,17 @@ QSharedPointer<QJsonWebKey> QJsonWebKey::fromJsonWebKey(const QByteArray &jwk)
 #else
 		return nullptr;
 #endif
-		// private RSA
+	}
+	else if (type == JWK_ALG_RSA && obj.contains("n") && obj.contains("e"))
+	{
+		// public RSA
+#ifdef USE_QCA
+		QCA::BigInteger n = QCA::SecureArray(fromBase64Url(obj.value("n").toString("")));
+		QCA::BigInteger e = QCA::SecureArray(fromBase64Url(obj.value("e").toString("")));
+		return QSharedPointer<QJsonWebKeyRSAPublic>::create(QCA::RSAPublicKey(n, e));
+#else
+		return nullptr;
+#endif
 	}
 	else
 	{
