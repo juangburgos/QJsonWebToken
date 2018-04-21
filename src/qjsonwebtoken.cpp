@@ -402,9 +402,9 @@ void QJsonWebToken::updateSignature()
 {
 	// recalculate
 	// get header in compact mode and base64 encoded
-	QByteArray byteHeaderBase64  = toBase64Url(m_jdocHeader.toJson(QJsonDocument::JsonFormat::Compact));
+	QByteArray byteHeaderBase64  = toBase64Url(m_byteHeader);
 	// get payload in compact mode and base64 encoded
-	QByteArray bytePayloadBase64 = toBase64Url(m_jdocPayload.toJson(QJsonDocument::JsonFormat::Compact));
+	QByteArray bytePayloadBase64 = toBase64Url(m_bytePayload);
 	// calculate signature based on chosen algorithm and secret
 	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
 	m_byteSignature = calcSignature(m_byteAllData);
