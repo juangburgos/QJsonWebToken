@@ -6,10 +6,27 @@
 
 #include "dialog.h"
 #include <QApplication>
+#include <QDebug>
+#include <QDir>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+#ifdef USE_QCA
+    QDir dir(QApplication::applicationDirPath());
+    dir.cd("plugins");
+    QApplication::addLibraryPath(dir.absolutePath());
+
+    QCA::Initializer init;
+    Q_UNUSED(init);
+
+    if (!QCA::isSupported("pkey") || !QCA::PKey::supportedIOTypes().contains(QCA::PKey::RSA))
+    {
+        qDebug() << "RSA not supported.";
+    }
+#endif
+
     Dialog w;
     w.show();
 

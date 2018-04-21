@@ -108,21 +108,21 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>Secret : </string>
+             <string>JWK : </string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="lineEditSecret"/>
-          </item>
-          <item row="2" column="0">
+          <item row="1" column="0">
            <widget class="QLabel" name="label_2">
             <property name="text">
              <string>Status : </string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="1" column="1">
            <widget class="QPushButton" name="pushStatus">
             <property name="enabled">
              <bool>false</bool>
@@ -135,15 +135,8 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QCheckBox" name="checkBoxIsOctet">
-            <property name="text">
-             <string>Base64 text</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
+          <item row="0" column="1">
+           <widget class="QPlainTextEdit" name="plainTextEditKey"/>
           </item>
          </layout>
         </widget>

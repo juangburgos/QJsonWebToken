@@ -34,20 +34,16 @@ void Dialog::on_plainTextEncoded_textChanged()
 		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : token must have the format xxxx.yyyyy.zzzzz"));
 		return;
 	}
-	QString strSecret = ui->lineEditSecret->text();
-	if (strSecret.isEmpty())
+	QString key = ui->plainTextEditKey->toPlainText();
+	if (key.isEmpty())
 	{
 		// show error
-		ui->plainTextHeader->setPlainText(QObject::trUtf8("ERROR : secret must be non-empty"));
-		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : secret must be non-empty"));
+		ui->plainTextHeader->setPlainText(QObject::trUtf8("ERROR : key must be non-empty"));
+		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : key must be non-empty"));
 		return;
 	}
-	QByteArray byteSecret = strSecret.toUtf8();
-	if (ui->checkBoxIsOctet->isChecked()) {
-		byteSecret = QByteArray::fromBase64(byteSecret, QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-	}
 	// set token and secret
-	QJsonWebToken token = QJsonWebToken::fromTokenAndKey(strToken, QJsonWebKey::fromOctet(byteSecret));
+	QJsonWebToken token = QJsonWebToken::fromTokenAndKey(strToken, QJsonWebKey::fromJsonWebKey(key.toUtf8()));
 	// get decoded header and payload
 	QString strHeader = token.getHeaderQStr();
 	QString strPayload = token.getPayloadQStr();
@@ -72,7 +68,7 @@ void Dialog::on_checkBoxIsOctet_stateChanged()
 	on_plainTextEncoded_textChanged();
 }
 
-void Dialog::on_lineEditSecret_textChanged(const QString &arg1)
+void Dialog::on_plainTextEditKey_textChanged()
 {
 	on_plainTextEncoded_textChanged();
 }

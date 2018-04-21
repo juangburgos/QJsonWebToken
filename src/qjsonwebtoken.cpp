@@ -42,6 +42,11 @@ QByteArray fromBase64Url(const QByteArray &base64)
 	return QByteArray::fromBase64(base64, QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 }
 
+QByteArray fromBase64Url(const QString &base64)
+{
+	return fromBase64Url(base64.toUtf8());
+}
+
 
 class QJsonWebKeyOctet : public QJsonWebKey,  public QEnableSharedFromThis<QJsonWebKeyOctet>
 {
@@ -105,6 +110,173 @@ private:
 
 };
 
+#ifdef USE_QCA
+class QJsonWebKeyRSAPublic : public QJsonWebKey, public QEnableSharedFromThis<QJsonWebKeyRSAPublic>
+{
+public:
+	QJsonWebKeyRSAPublic(const QCA::PublicKey &key) :
+		key(key)
+	{}
+	virtual ~QJsonWebKeyRSAPublic()
+	{}
+
+	KeyType type() const override
+	{ return RSA; }
+
+	bool isPrivate() const override
+	{ return false; }
+
+	QByteArray sign(const QString &, const QByteArray &) const override
+	{
+		// public key cannot sign
+		return QByteArray();
+	}
+
+	bool verify(const QString &algorithm, const QByteArray &signature, const QByteArray &data) const override
+	{
+		QCA::MemoryRegion mdata(data);
+		QCA::PublicKey key = this->key;
+		if (algorithm.compare(JWT_ALG_RS256, Qt::CaseInsensitive) == 0)	  // RSA using SHA-256 hash algorithm
+		{
+			return key.verifyMessage(mdata, signature, QCA::EMSA3_SHA256);
+		}
+		else if (algorithm.compare(JWT_ALG_RS384, Qt::CaseInsensitive) == 0) // RSA using SHA-384 hash algorithm
+		{
+			return key.verifyMessage(mdata, signature, QCA::EMSA3_SHA384);
+		}
+		else if (algorithm.compare(JWT_ALG_RS512, Qt::CaseInsensitive) == 0) // RSA using SHA-512 hash algorithm
+		{
+			return key.verifyMessage(mdata, signature, QCA::EMSA3_SHA512);
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	QSharedPointer<QJsonWebKey> toPublic() override
+	{ return sharedFromThis(); }
+
+	QByteArray toJson() const override
+	{
+		const QCA::RSAPublicKey pub = key.toRSA();
+		if (pub.isNull())
+		{
+			return QByteArray();
+		}
+		QJsonObject obj;
+		obj["kty"] = JWK_ALG_RSA;
+		obj["n"] = QString::fromUtf8(toBase64Url(pub.n().toArray().toByteArray()));
+		obj["e"] = QString::fromUtf8(toBase64Url(pub.e().toArray().toByteArray()));
+		return QJsonDocument(obj).toJson(QJsonDocument::JsonFormat::Compact);
+	}
+
+	QStringList supportedAlgorithms() const override
+	{
+		return QStringList() << JWT_ALG_RS256 << JWT_ALG_RS384 << JWT_ALG_RS512;
+	}
+
+private:
+	QCA::PublicKey key;
+
+};
+
+class QJsonWebKeyRSAPrivate : public QJsonWebKey
+{
+public:
+	QJsonWebKeyRSAPrivate(const QCA::PrivateKey &key) :
+		key(key),
+		pub(key)
+	{}
+	virtual ~QJsonWebKeyRSAPrivate()
+	{}
+
+	KeyType type() const override
+	{ return RSA; }
+
+	bool isPrivate() const override
+	{ return true; }
+
+	QByteArray sign(const QString &algorithm, const QByteArray &data) const override
+	{
+		if (key.isNull())
+		{
+			return QByteArray();
+		}
+		// calculate
+		QCA::MemoryRegion mdata(data);
+		QCA::PrivateKey key = this->key;
+		if (algorithm.compare(JWT_ALG_RS256, Qt::CaseInsensitive) == 0)	  // RSA using SHA-256 hash algorithm
+		{
+			return key.signMessage(mdata, QCA::EMSA3_SHA256);
+		}
+		else if (algorithm.compare(JWT_ALG_RS384, Qt::CaseInsensitive) == 0) // RSA using SHA-384 hash algorithm
+		{
+			return key.signMessage(mdata, QCA::EMSA3_SHA384);
+		}
+		else if (algorithm.compare(JWT_ALG_RS512, Qt::CaseInsensitive) == 0) // RSA using SHA-512 hash algorithm
+		{
+			return key.signMessage(mdata, QCA::EMSA3_SHA512);
+		}
+		else
+		{
+			return QByteArray();
+		}
+	}
+
+	bool verify(const QString &algorithm, const QByteArray &signature, const QByteArray &data) const override
+	{
+		QCA::MemoryRegion mdata(data);
+		QCA::PublicKey pub = this->pub;
+		if (algorithm.compare(JWT_ALG_RS256, Qt::CaseInsensitive) == 0)	  // RSA using SHA-256 hash algorithm
+		{
+			return pub.verifyMessage(mdata, signature, QCA::EMSA3_SHA256);
+		}
+		else if (algorithm.compare(JWT_ALG_RS384, Qt::CaseInsensitive) == 0) // RSA using SHA-384 hash algorithm
+		{
+			return pub.verifyMessage(mdata, signature, QCA::EMSA3_SHA384);
+		}
+		else if (algorithm.compare(JWT_ALG_RS512, Qt::CaseInsensitive) == 0) // RSA using SHA-512 hash algorithm
+		{
+			return pub.verifyMessage(mdata, signature, QCA::EMSA3_SHA512);
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	QSharedPointer<QJsonWebKey> toPublic() override
+	{ return QSharedPointer<QJsonWebKeyRSAPublic>::create(pub); }
+
+	QByteArray toJson() const override
+	{
+		const QCA::RSAPrivateKey pri = key.toRSA();
+		if (pri.isNull())
+		{
+			return QByteArray();
+		}
+		QJsonObject obj;
+		obj["kty"] = JWK_ALG_RSA;
+		obj["n"] = QString::fromUtf8(toBase64Url(pri.n().toArray().toByteArray()));
+		obj["e"] = QString::fromUtf8(toBase64Url(pri.e().toArray().toByteArray()));
+		obj["p"] = QString::fromUtf8(toBase64Url(pri.p().toArray().toByteArray()));
+		obj["q"] = QString::fromUtf8(toBase64Url(pri.q().toArray().toByteArray()));
+		obj["d"] = QString::fromUtf8(toBase64Url(pri.d().toArray().toByteArray()));
+		return QJsonDocument(obj).toJson(QJsonDocument::JsonFormat::Compact);
+	}
+
+	QStringList supportedAlgorithms() const override
+	{
+		return QStringList() << JWT_ALG_RS256 << JWT_ALG_RS384 << JWT_ALG_RS512;
+	}
+
+private:
+	QCA::PrivateKey key;
+	QCA::PublicKey pub;
+
+};
+#endif // USE_QCA
 
 QSharedPointer<QJsonWebKey> QJsonWebKey::fromJsonWebKey(const QByteArray &jwk)
 {
@@ -120,6 +292,20 @@ QSharedPointer<QJsonWebKey> QJsonWebKey::fromJsonWebKey(const QByteArray &jwk)
 	{
 		return fromOctet(fromBase64Url(obj.value("k").toString("").toUtf8()));
 	}
+	else if (type == JWK_ALG_RSA && obj.contains("n") && obj.contains("e") && obj.contains("d") && obj.contains("p") && obj.contains("q") && obj.contains("dp") && obj.contains("dq") && obj.contains("qi"))
+	{
+#ifdef USE_QCA
+		QCA::BigInteger n = QCA::SecureArray(fromBase64Url(obj.value("n").toString("")));
+		QCA::BigInteger e = QCA::SecureArray(fromBase64Url(obj.value("e").toString("")));
+		QCA::BigInteger d = QCA::SecureArray(fromBase64Url(obj.value("d").toString("")));
+		QCA::BigInteger p = QCA::SecureArray(fromBase64Url(obj.value("p").toString("")));
+		QCA::BigInteger q = QCA::SecureArray(fromBase64Url(obj.value("q").toString("")));
+		return QSharedPointer<QJsonWebKeyRSAPrivate>::create(QCA::RSAPrivateKey(n, e, p, q, d));
+#else
+		return nullptr;
+#endif
+		// private RSA
+	}
 	else
 	{
 		// unknown key
@@ -131,6 +317,18 @@ QSharedPointer<QJsonWebKey> QJsonWebKey::fromOctet(const QByteArray &data)
 {
 	return QSharedPointer<QJsonWebKeyOctet>::create(data);
 }
+
+#ifdef USE_QCA
+QSharedPointer<QJsonWebKey> QJsonWebKey::generateRSAPrivateKey(int bits)
+{
+	QCA::PrivateKey key = QCA::KeyGenerator().createRSA(bits);
+	if (key.isNull())
+	{
+		return nullptr;
+	}
+	return QSharedPointer<QJsonWebKeyRSAPrivate>::create(key);
+}
+#endif // USE_QCA
 
 
 QJsonWebToken::QJsonWebToken() :
@@ -497,10 +695,14 @@ bool QJsonWebToken::isAlgorithmSupported(QString strAlgorithm)
 	// TODO : support other algorithms
 	if (strAlgorithm.compare("HS256", Qt::CaseInsensitive) != 0 && // HMAC using SHA-256 hash algorithm
 		strAlgorithm.compare("HS384", Qt::CaseInsensitive) != 0 && // HMAC using SHA-384 hash algorithm
-		strAlgorithm.compare("HS512", Qt::CaseInsensitive) != 0 /*&& // HMAC using SHA-512 hash algorithm
+		strAlgorithm.compare("HS512", Qt::CaseInsensitive) != 0    // HMAC using SHA-512 hash algorithm
+#ifdef USE_QCA
+		&&
 		strAlgorithm.compare("RS256", Qt::CaseInsensitive) != 0 && // RSA using SHA-256 hash algorithm
 		strAlgorithm.compare("RS384", Qt::CaseInsensitive) != 0 && // RSA using SHA-384 hash algorithm
-		strAlgorithm.compare("RS512", Qt::CaseInsensitive) != 0 && // RSA using SHA-512 hash algorithm
+		strAlgorithm.compare("RS512", Qt::CaseInsensitive) != 0    // RSA using SHA-512 hash algorithm
+#endif // USE_QCA
+		/*&&
 		strAlgorithm.compare("ES256", Qt::CaseInsensitive) != 0 && // ECDSA using P-256 curve and SHA-256 hash algorithm
 		strAlgorithm.compare("ES384", Qt::CaseInsensitive) != 0 && // ECDSA using P-384 curve and SHA-384 hash algorithm
 		strAlgorithm.compare("ES512", Qt::CaseInsensitive) != 0*/)  // ECDSA using P-521 curve and SHA-512 hash algorithm
@@ -513,5 +715,10 @@ bool QJsonWebToken::isAlgorithmSupported(QString strAlgorithm)
 QStringList QJsonWebToken::supportedAlgorithms()
 {
 	// TODO : support other algorithms
-	return QStringList() << "HS256" << "HS384" << "HS512";
+	return QStringList()
+			<< "HS256" << "HS384" << "HS512"
+#ifdef USE_QCA
+			<< "RS256" << "RS384" << "RS512"
+#endif // USE_QCA
+			   ;
 }

@@ -21,6 +21,10 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+#ifdef USE_QCA
+#include <QtCrypto>
+#endif // USE_QCA
+
 
 // forward declaration
 class QJsonWebKey;
@@ -382,6 +386,7 @@ public:
 
 	static QSharedPointer<QJsonWebKey> fromJsonWebKey(const QByteArray &jwk);
 	static QSharedPointer<QJsonWebKey> fromOctet(const QByteArray &data);
+	static QSharedPointer<QJsonWebKey> generateRSAPrivateKey(int bits);
 };
 
 

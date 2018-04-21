@@ -27,7 +27,7 @@ private slots:
     void on_plainTextEncoded_textChanged();
     void on_checkBoxIsOctet_stateChanged();
 
-    void on_lineEditSecret_textChanged(const QString &arg1);
+    void on_plainTextEditKey_textChanged();
 
 private:
     Ui::Dialog *ui;

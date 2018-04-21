@@ -32,12 +32,14 @@ private slots:
 
     void on_comboAlgorithm_currentIndexChanged(const QString &arg1);
 
-    void on_lineSecret_textChanged(const QString &arg1);
+    void on_plainTextEditKey_textChanged();
 
     void on_pushRandom_clicked();
 
 private:
     Ui::Dialog *ui;
+    QSharedPointer<QJsonWebKey> hsKey;
+    QSharedPointer<QJsonWebKey> rsKey;
 };
 
 #endif // DIALOG_H
