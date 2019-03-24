@@ -25,3 +25,5 @@ SOURCES += main.cpp   \
 HEADERS += dialog.h 
 
 FORMS   += dialog.ui
+
+include(../add_qt_path_win.pri)

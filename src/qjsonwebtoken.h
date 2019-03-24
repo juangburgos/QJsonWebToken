@@ -88,7 +88,7 @@ public:
 	\return JWT *header* as a QJsonDocument.
 
 	*/
-	QJsonDocument getHeaderJDoc();
+	QJsonDocument getHeaderJDoc() const;
 
 	/**
 
@@ -99,7 +99,7 @@ public:
 	Format can be *QJsonDocument::JsonFormat::Indented* or *QJsonDocument::JsonFormat::Compact*
 
 	*/
-	QString       getHeaderQStr(QJsonDocument::JsonFormat format = QJsonDocument::JsonFormat::Indented);
+	QString       getHeaderQStr(const QJsonDocument::JsonFormat &format = QJsonDocument::JsonFormat::Indented) const;
 
 	/**
 
@@ -110,7 +110,7 @@ public:
 	This method checks for a valid header format and returns false if the header is invalid.
 
 	*/
-	bool          setHeaderJDoc(QJsonDocument jdocHeader);
+	bool          setHeaderJDoc(const QJsonDocument &jdocHeader);
 
 	/**
 
@@ -121,7 +121,7 @@ public:
 	This method checks for a valid header format and returns false if the header is invalid.
 
 	*/
-	bool          setHeaderQStr(QString strHeader);
+	bool          setHeaderQStr(const QString &strHeader);
 
 	/**
 
@@ -129,7 +129,7 @@ public:
 	\return JWT *payload* as a QJsonDocument.
 
 	*/
-	QJsonDocument getPayloadJDoc();
+	QJsonDocument getPayloadJDoc() const;
 
 	/**
 
@@ -140,7 +140,7 @@ public:
 	Format can be *QJsonDocument::JsonFormat::Indented* or *QJsonDocument::JsonFormat::Compact*
 
 	*/
-	QString       getPayloadQStr(QJsonDocument::JsonFormat format = QJsonDocument::JsonFormat::Indented);
+	QString       getPayloadQStr(const QJsonDocument::JsonFormat &format = QJsonDocument::JsonFormat::Indented) const;
 
 	/**
 
@@ -151,7 +151,7 @@ public:
 	This method checks for a valid payload format and returns false if the payload is invalid.
 
 	*/
-	bool          setPayloadJDoc(QJsonDocument jdocPayload);
+	bool          setPayloadJDoc(const QJsonDocument &jdocPayload);
 
 	/**
 
@@ -162,7 +162,7 @@ public:
 	This method checks for a valid payload format and returns false if the payload is invalid.
 
 	*/
-	bool          setPayloadQStr(QString strPayload);
+	bool          setPayloadQStr(const QString &strPayload);
 
 	/**
 
@@ -176,7 +176,7 @@ public:
 	the signature was obtained by copying from another QJsonWebToken using the copy constructor.
 
 	*/
-	QByteArray    getSignature();		// WARNING overwrites signature
+	QByteArray    getSignature(); // WARNING : non-const because it overwrites signature
 
 	/**
 
@@ -190,7 +190,7 @@ public:
 	the signature was obtained by copying from another QJsonWebToken using the copy constructor.
 
 	*/
-	QByteArray    getSignatureBase64(); // WARNING overwrites signature
+	QByteArray    getSignatureBase64(); // WARNING : non-const because it overwrites signature
 
 	/**
 
@@ -198,7 +198,7 @@ public:
 	\return JWT *secret* as a QString.
 
 	*/
-	QString       getSecret();
+	QString       getSecret() const;
 
 	/**
 
@@ -209,7 +209,7 @@ public:
 	This method checks for a valid secret format and returns false if the secret is invalid.
 
 	*/
-	bool          setSecret(QString strSecret);
+	bool          setSecret(const QString &strSecret);
 
 	/**
 
@@ -230,7 +230,7 @@ public:
 	\return JWT *algorithm* as a QString.
 
 	*/
-	QString       getAlgorithmStr();
+	QString       getAlgorithmStr() const;
 
 	/**
 
@@ -245,7 +245,7 @@ public:
 	\sa QJsonWebToken::supportedAlgorithms().
 
 	*/
-	bool          setAlgorithmStr(QString strAlgorithm);
+	bool          setAlgorithmStr(const QString &strAlgorithm);
 
 	/**
 
@@ -264,6 +264,12 @@ public:
 	- *yyyyy* is the *payload* enconded in base64.
 	- *zzzzz* is the *signature* enconded in base64.
 
+	\warning This method overwrites the old signature becuse it calls getSignatureBase64 internally. 
+	This could be undesired when the signature was obtained by copying from another QJsonWebToken 
+	using the copy constructor.
+
+	\sa QJsonWebToken::getSignatureBase64().
+
 	*/
 	QString       getToken();
 
@@ -279,7 +285,7 @@ public:
 	\sa QJsonWebToken::getToken().
 
 	*/
-	bool          setToken(QString strToken);
+	bool          setToken(const QString &strToken);
 
 	/**
 
@@ -292,7 +298,7 @@ public:
 	\sa QJsonWebToken::setRandAlphanum()
 
 	*/
-    QString       getRandAlphanum();
+    QString       getRandAlphanum() const;
 
 	/**
 
@@ -303,7 +309,7 @@ public:
 	\sa QJsonWebToken::getRandAlphanum()
 
 	*/
-    void          setRandAlphanum(QString strRandAlphanum);
+    void          setRandAlphanum(const QString &strRandAlphanum);
 
 	/**
 
@@ -316,7 +322,7 @@ public:
 	\sa QJsonWebToken::setRandLength()
 
 	*/
-    int           getRandLength();
+    int           getRandLength() const;
 
 	/**
 
@@ -327,7 +333,7 @@ public:
 	\sa QJsonWebToken::getRandLength()
 
 	*/
-    void          setRandLength(int intRandLength);
+    void          setRandLength(const int &intRandLength);
 
 	/**
 
@@ -339,7 +345,7 @@ public:
 	false is returned.
 
 	*/
-	bool          isValid();
+	bool          isValid() const;
 
 	/**
 
@@ -352,7 +358,7 @@ public:
 	values will be returned.
 
 	*/
-	static QJsonWebToken fromTokenAndSecret(QString strToken, QString srtSecret);
+	static QJsonWebToken fromTokenAndSecret(const QString &strToken, const QString &srtSecret);
 
 	/**
 
@@ -372,7 +378,7 @@ public:
 	claim value is updated.
 
 	*/
-	void appendClaim(QString strClaimType, QString strValue);
+	void appendClaim(const QString &strClaimType, const QString &strValue);
 
 	/**
 
@@ -382,7 +388,7 @@ public:
 	If the claim type does not exist in the *payload*, then this method does nothins.
 
 	*/
-	void removeClaim(QString strClaimType);
+	void removeClaim(const QString &strClaimType);
 
 private:
 	// properties
@@ -398,7 +404,7 @@ private:
 	// helpers
 	QByteArray    m_byteAllData;
 
-	bool isAlgorithmSupported(QString strAlgorithm);
+	bool isAlgorithmSupported(const QString &strAlgorithm);
 };
 
 #endif // QJSONWEBTOKEN_H

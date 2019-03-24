@@ -65,5 +65,6 @@ void Dialog::on_plainTextEncoded_textChanged()
 
 void Dialog::on_lineEditSecret_textChanged(const QString &arg1)
 {
+	Q_UNUSED(arg1);
 	on_plainTextEncoded_textChanged();
 }

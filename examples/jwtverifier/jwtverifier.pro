@@ -19,10 +19,11 @@ TEMPLATE      = vcapp
 
 include(../../src/qjsonwebtoken.pri)
 
-
 SOURCES  += main.cpp \
             dialog.cpp
 
 HEADERS  += dialog.h
 
 FORMS    += dialog.ui
+
+include(../add_qt_path_win.pri)

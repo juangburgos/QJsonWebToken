@@ -87,6 +87,7 @@ void Dialog::on_comboAlgorithm_currentIndexChanged(const QString &arg1)
 
 void Dialog::on_lineSecret_textChanged(const QString &arg1)
 {
+	Q_UNUSED(arg1);
     // set new secret
     m_jwtObj.setSecret(ui->lineSecret->text());
     // show new jwt
