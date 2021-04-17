@@ -1,0 +1,2 @@
+INCLUDEPATH += $$[QT_INSTALL_HEADERS]/QJsonWebToken
+LIBS += -l$$qtLibraryTarget(QJsonWebToken)
