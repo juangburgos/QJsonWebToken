@@ -55,7 +55,7 @@ The repository of this project includes examples that demonstrate the use of thi
 * ./examples/jwtverifier/ : Example that shows how to validate a JWT with a given *secret*.
 
 */
-class QJsonWebToken
+class Q_DECL_EXPORT QJsonWebToken
 {
 
 public:
