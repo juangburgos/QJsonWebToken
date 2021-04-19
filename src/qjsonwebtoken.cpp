@@ -312,6 +312,13 @@ void QJsonWebToken::removeClaim(const QString &strClaimType)
 	m_jdocPayload = QJsonDocument(jObj);
 }
 
+QString QJsonWebToken::claim(const QString &strClaimType)
+{
+	QJsonObject jObj = m_jdocPayload.object();
+
+	return jObj[strClaimType].toString();
+}
+
 bool QJsonWebToken::isAlgorithmSupported(const QString &strAlgorithm)
 {
 	// TODO : support other algorithms

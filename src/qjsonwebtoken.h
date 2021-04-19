@@ -390,6 +390,17 @@ public:
 	*/
 	void removeClaim(const QString &strClaimType);
 
+	/**
+
+	\brief Convenience method to return the data of a claim from the *payload* as a string.
+	\param strClaimType The claim type as a QString.
+
+	If the claim type does not exist in the *payload*, then this method returns a default
+	constructed QString.
+
+	*/
+	QString claim(const QString &strClaimType);
+
 private:
 	// properties
 	QJsonDocument m_jdocHeader;	   // unencoded
