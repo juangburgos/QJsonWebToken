@@ -15,7 +15,6 @@
 #ifndef QJSONWEBTOKEN_H
 #define QJSONWEBTOKEN_H
 
-#include <QObject>
 #include <QMessageAuthenticationCode>
 #include <QJsonDocument>
 #include <QJsonObject>

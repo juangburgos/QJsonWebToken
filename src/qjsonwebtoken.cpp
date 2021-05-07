@@ -186,9 +186,9 @@ bool QJsonWebToken::setAlgorithmStr(const QString &strAlgorithm)
 	// set algorithm
 	m_strAlgorithm = strAlgorithm;
 	// modify header
-	m_jdocHeader = QJsonDocument::fromJson(QObject::trUtf8("{\"typ\": \"JWT\", \"alg\" : \"").toUtf8()
+    m_jdocHeader = QJsonDocument::fromJson(QByteArray("{\"typ\": \"JWT\", \"alg\" : \"")
 		                                 + m_strAlgorithm.toUtf8()
-		                                 + QObject::trUtf8("\"}").toUtf8());
+                                         + QByteArray("\"}"));
 
 	return true;
 }
