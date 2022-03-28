@@ -98,7 +98,7 @@ public:
 	Format can be *QJsonDocument::JsonFormat::Indented* or *QJsonDocument::JsonFormat::Compact*
 
 	*/
-	QString       getHeaderQStr(const QJsonDocument::JsonFormat &format = QJsonDocument::JsonFormat::Indented) const;
+    QString       getHeaderQStr() const;
 
 	/**
 
@@ -139,7 +139,7 @@ public:
 	Format can be *QJsonDocument::JsonFormat::Indented* or *QJsonDocument::JsonFormat::Compact*
 
 	*/
-	QString       getPayloadQStr(const QJsonDocument::JsonFormat &format = QJsonDocument::JsonFormat::Indented) const;
+    QString       getPayloadQStr() const;
 
 	/**
 
@@ -405,6 +405,9 @@ private:
 	QJsonDocument m_jdocHeader;	   // unencoded
 	QJsonDocument m_jdocPayload;   // unencoded
 	QByteArray    m_byteSignature; // unencoded
+    QString       m_strHeader; // unencoded
+    QString       m_strPayload; // unencoded
+
 	QString       m_strSecret;
 	QString       m_strAlgorithm;
 

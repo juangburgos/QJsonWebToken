@@ -25,6 +25,8 @@ QJsonWebToken::QJsonWebToken(const QJsonWebToken &other)
 	this->m_byteSignature = other.m_byteSignature;
 	this->m_strSecret     = other.m_strSecret;
 	this->m_strAlgorithm  = other.m_strAlgorithm;
+    this->m_strPayload = other.m_strPayload;
+    this->m_strHeader = other.m_strHeader;
 }
 
 QJsonDocument QJsonWebToken::getHeaderJDoc() const
@@ -32,9 +34,9 @@ QJsonDocument QJsonWebToken::getHeaderJDoc() const
 	return m_jdocHeader;
 }
 
-QString QJsonWebToken::getHeaderQStr(const QJsonDocument::JsonFormat &format/* = QJsonDocument::JsonFormat::Indented*/) const
+QString QJsonWebToken::getHeaderQStr() const
 {
-	return m_jdocHeader.toJson(format);
+    return m_strHeader;
 }
 
 bool QJsonWebToken::setHeaderJDoc(const QJsonDocument &jdocHeader)
@@ -53,6 +55,8 @@ bool QJsonWebToken::setHeaderJDoc(const QJsonDocument &jdocHeader)
 
 	m_jdocHeader = jdocHeader;
 
+    m_strHeader = jdocHeader.toJson(QJsonDocument::Compact);
+
 	// set also new algorithm
 	m_strAlgorithm = strAlgorithm;
 
@@ -69,6 +73,8 @@ bool QJsonWebToken::setHeaderQStr(const QString &strHeader)
 	{
 		return false;
 	}
+    m_strHeader=strHeader;
+
 
 	return true;
 }
@@ -78,9 +84,9 @@ QJsonDocument QJsonWebToken::getPayloadJDoc() const
 	return m_jdocPayload;
 }
 
-QString QJsonWebToken::getPayloadQStr(const QJsonDocument::JsonFormat &format/* = QJsonDocument::JsonFormat::Indented*/) const
+QString QJsonWebToken::getPayloadQStr() const
 {
-	return m_jdocPayload.toJson(format);
+    return m_strPayload;
 }
 
 bool QJsonWebToken::setPayloadJDoc(const QJsonDocument &jdocPayload)
@@ -91,6 +97,8 @@ bool QJsonWebToken::setPayloadJDoc(const QJsonDocument &jdocPayload)
 	}
 
 	m_jdocPayload = jdocPayload;
+
+    m_strPayload = jdocPayload.toJson(QJsonDocument::Compact);
 
 	return true;
 }
@@ -105,7 +113,7 @@ bool QJsonWebToken::setPayloadQStr(const QString &strPayload)
 	{
 		return false;
 	}
-
+    m_strPayload = strPayload;
 	return true;
 }
 
@@ -113,11 +121,12 @@ QByteArray QJsonWebToken::getSignature()
 {
 	// recalculate
 	// get header in compact mode and base64 encoded
-	QByteArray byteHeaderBase64  = getHeaderQStr(QJsonDocument::JsonFormat::Compact).toUtf8().toBase64();
+    QByteArray byteHeaderBase64  = getHeaderQStr().toUtf8().toBase64();
 	// get payload in compact mode and base64 encoded
-	QByteArray bytePayloadBase64 = getPayloadQStr(QJsonDocument::JsonFormat::Compact).toUtf8().toBase64();
+    QByteArray bytePayloadBase64 = getPayloadQStr().toUtf8().toBase64();
 	// calculate signature based on chosen algorithm and secret
 	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
+//    qDebug()<<"m: " << m_byteAllData;
 	if (m_strAlgorithm.compare("HS256", Qt::CaseSensitive) == 0)      // HMAC using SHA-256 hash algorithm
 	{
 		m_byteSignature = QMessageAuthenticationCode::hash(m_byteAllData, m_strSecret.toUtf8(), QCryptographicHash::Sha256);
