@@ -121,9 +121,9 @@ QByteArray QJsonWebToken::getSignature()
 {
 	// recalculate
 	// get header in compact mode and base64 encoded
-    QByteArray byteHeaderBase64  = getHeaderQStr().toUtf8().toBase64();
+    QByteArray byteHeaderBase64  = getHeaderQStr().toUtf8().toBase64(QByteArray::Base64UrlEncoding);
 	// get payload in compact mode and base64 encoded
-    QByteArray bytePayloadBase64 = getPayloadQStr().toUtf8().toBase64();
+    QByteArray bytePayloadBase64 = getPayloadQStr().toUtf8().toBase64(QByteArray::Base64UrlEncoding);
 	// calculate signature based on chosen algorithm and secret
 	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
 //    qDebug()<<"m: " << m_byteAllData;
@@ -151,7 +151,7 @@ QByteArray QJsonWebToken::getSignature()
 QByteArray QJsonWebToken::getSignatureBase64()
 {
 	// note we return through getSignature() to force recalculation
-	return getSignature().toBase64();
+    return getSignature().toBase64(QByteArray::Base64UrlEncoding);
 }
 
 QString QJsonWebToken::getSecret() const
@@ -223,8 +223,8 @@ bool QJsonWebToken::setToken(const QString &strToken)
 	// check all parts are valid using another instance,
 	// so we dont overwrite this instance in case of error
 	QJsonWebToken tempTokenObj;
-	if ( !tempTokenObj.setHeaderQStr(QByteArray::fromBase64(listJwtParts.at(0).toUtf8())) ||
-		 !tempTokenObj.setPayloadQStr(QByteArray::fromBase64(listJwtParts.at(1).toUtf8())) )
+    if ( !tempTokenObj.setHeaderQStr(QByteArray::fromBase64(listJwtParts.at(0).toUtf8(),QByteArray::Base64UrlEncoding)) ||
+         !tempTokenObj.setPayloadQStr(QByteArray::fromBase64(listJwtParts.at(1).toUtf8(),QByteArray::Base64UrlEncoding)) )
 	{
 		// try unencoded
 		if (!tempTokenObj.setHeaderQStr(listJwtParts.at(0)) ||
@@ -242,7 +242,7 @@ bool QJsonWebToken::setToken(const QString &strToken)
 	setPayloadQStr(tempTokenObj.getPayloadQStr());
 	if (isBase64Encoded)
 	{ // unencode
-		m_byteSignature = QByteArray::fromBase64(listJwtParts.at(2).toUtf8());
+        m_byteSignature = QByteArray::fromBase64(listJwtParts.at(2).toUtf8(),QByteArray::Base64UrlEncoding);
 	} 
 	else
 	{
