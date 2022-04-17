@@ -121,9 +121,9 @@ QByteArray QJsonWebToken::getSignature()
 {
 	// recalculate
 	// get header in compact mode and base64 encoded
-    QByteArray byteHeaderBase64  = getHeaderQStr().toUtf8().toBase64(QByteArray::Base64UrlEncoding);
+    QByteArray byteHeaderBase64  = getHeaderQStr().toUtf8().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 	// get payload in compact mode and base64 encoded
-    QByteArray bytePayloadBase64 = getPayloadQStr().toUtf8().toBase64(QByteArray::Base64UrlEncoding);
+    QByteArray bytePayloadBase64 = getPayloadQStr().toUtf8().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 	// calculate signature based on chosen algorithm and secret
 	m_byteAllData = byteHeaderBase64 + "." + bytePayloadBase64;
 //    qDebug()<<"m: " << m_byteAllData;
