@@ -10,4 +10,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(src)
+
+if(QJSONWEBTOKEN_BUILD_EXAMPLES)
 add_subdirectory(examples)
+endif()
