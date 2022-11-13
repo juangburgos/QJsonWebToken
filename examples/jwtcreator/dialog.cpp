@@ -23,8 +23,8 @@ Dialog::Dialog(QWidget *parent) :
 	m_jwtObj.setSecret("mydirtysecret");
 	// set a default payload
 	m_jwtObj.appendClaim("iss", "juangburgos");
-	m_jwtObj.appendClaim("iat", QString::number(QDateTime::currentDateTime().toTime_t()));
-	m_jwtObj.appendClaim("exp", QString::number(QDateTime::currentDateTime().addDays(7).toTime_t()));
+    m_jwtObj.appendClaim("iat", QString::number(QDateTime::currentDateTime().toSecsSinceEpoch()));
+    m_jwtObj.appendClaim("exp", QString::number(QDateTime::currentDateTime().addDays(7).toSecsSinceEpoch()));
 	m_jwtObj.appendClaim("aud", "everybody");
 	m_jwtObj.appendClaim("sub", "hey there");
 	// set current value to views

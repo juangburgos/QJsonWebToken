@@ -30,16 +30,16 @@ void Dialog::on_plainTextEncoded_textChanged()
 	if (listJwtParts.count() != 3)
 	{
 		// show error
-		ui->plainTextHeader->setPlainText(QObject::trUtf8("ERROR : token must have the format xxxx.yyyyy.zzzzz"));
-		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : token must have the format xxxx.yyyyy.zzzzz"));
+        ui->plainTextHeader->setPlainText(QObject::tr("ERROR : token must have the format xxxx.yyyyy.zzzzz"));
+        ui->plainTextPayload->setPlainText(QObject::tr("ERROR : token must have the format xxxx.yyyyy.zzzzz"));
 		return;
 	}
 	QString strSecret = ui->lineEditSecret->text();
 	if (strSecret.isEmpty())
 	{
 		// show error
-		ui->plainTextHeader->setPlainText(QObject::trUtf8("ERROR : secret must be non-empty"));
-		ui->plainTextPayload->setPlainText(QObject::trUtf8("ERROR : secret must be non-empty"));
+        ui->plainTextHeader->setPlainText(QObject::tr("ERROR : secret must be non-empty"));
+        ui->plainTextPayload->setPlainText(QObject::tr("ERROR : secret must be non-empty"));
 		return;
 	}
 	// set token and secret
@@ -52,12 +52,12 @@ void Dialog::on_plainTextEncoded_textChanged()
 	// try to validate with secret
 	if (token.isValid())
 	{
-		ui->pushStatus->setText(QObject::trUtf8("VALID"));
+        ui->pushStatus->setText(QObject::tr("VALID"));
 		ui->pushStatus->setStyleSheet("background-color: #1aff8c; color: black; font: bold;");
 	} 
 	else
 	{
-		ui->pushStatus->setText(QObject::trUtf8("INVALID"));
+        ui->pushStatus->setText(QObject::tr("INVALID"));
 		ui->pushStatus->setStyleSheet("background-color: #ff8080; color: black; font: bold;");
 	}
 
