@@ -27,6 +27,7 @@ QJsonWebToken::QJsonWebToken(const QJsonWebToken &other)
 	this->m_strAlgorithm  = other.m_strAlgorithm;
     this->m_strPayload = other.m_strPayload;
     this->m_strHeader = other.m_strHeader;
+    this->m_byteAllData=other.m_byteAllData;
 }
 
 QJsonDocument QJsonWebToken::getHeaderJDoc() const
@@ -151,7 +152,7 @@ QByteArray QJsonWebToken::getSignature()
 QByteArray QJsonWebToken::getSignatureBase64()
 {
 	// note we return through getSignature() to force recalculation
-    return getSignature().toBase64(QByteArray::Base64UrlEncoding);
+    return getSignature().toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 }
 
 QString QJsonWebToken::getSecret() const
@@ -195,9 +196,12 @@ bool QJsonWebToken::setAlgorithmStr(const QString &strAlgorithm)
 	// set algorithm
 	m_strAlgorithm = strAlgorithm;
 	// modify header
-    m_jdocHeader = QJsonDocument::fromJson(QByteArray("{\"typ\": \"JWT\", \"alg\" : \"")
-		                                 + m_strAlgorithm.toUtf8()
-                                         + QByteArray("\"}"));
+
+    m_strHeader=    QByteArray("{\"typ\": \"JWT\", \"alg\" : \"")
+            + m_strAlgorithm.toUtf8()
+            + QByteArray("\"}");
+    m_jdocHeader = QJsonDocument::fromJson(m_strHeader.toUtf8());
+
 
 	return true;
 }
@@ -311,6 +315,9 @@ void QJsonWebToken::appendClaim(const QString &strClaimType, const QString &strV
 	QJsonObject jObj = m_jdocPayload.object();
 	jObj.insert(strClaimType, strValue);
 	m_jdocPayload = QJsonDocument(jObj);
+
+
+    m_strPayload = QJsonDocument(jObj).toJson(QJsonDocument::Compact);
 }
 
 void QJsonWebToken::removeClaim(const QString &strClaimType)
@@ -319,6 +326,8 @@ void QJsonWebToken::removeClaim(const QString &strClaimType)
 	QJsonObject jObj = m_jdocPayload.object();
 	jObj.remove(strClaimType);
 	m_jdocPayload = QJsonDocument(jObj);
+    m_strPayload = QJsonDocument(jObj).toJson(QJsonDocument::Compact);
+
 }
 
 QString QJsonWebToken::claim(const QString &strClaimType)
